@@ -1,0 +1,17 @@
+{% extends "/templates/base.html" %}
+
+{% block header %}
+{% if logged_in == true %}
+    {{ super() }}
+{% else %}
+    <h1>Welcome to ScheduleMyTasks!</h1>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<p>{{event}}</p>
+
+{% if logged_in == false %}
+<a href="{{ event }}">{{ url_linktext }}</a>
+{% endif %}
+{% endblock %}
