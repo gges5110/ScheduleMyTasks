@@ -18,6 +18,9 @@ import webapp2
 import os
 import jinja2
 import datetime
+
+from google.appengine.ext import ndb
+from google.appengine.api import users
 from apiclient.discovery import build
 from oauth2client.appengine import OAuth2DecoratorFromClientSecrets
 
@@ -33,7 +36,13 @@ decorator = OAuth2DecoratorFromClientSecrets(
 
 service = build('calendar', 'v3')
 
-class MainHandler(webapp2.RequestHandler):
+class MainHandler(webapp2.RequestHandler):    
+    def get(self):        
+        template_values = {}
+        template = JINJA_ENVIRONMENT.get_template('/templates/login.html')
+        self.response.write(template.render( template_values ))     
+
+class Calendar(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
         # Get the authorized Http object created by the decorator.
@@ -53,10 +62,18 @@ class MainHandler(webapp2.RequestHandler):
         template_values = {
             'event' : event_str
         }
-        template = JINJA_ENVIRONMENT.get_template('/templates/login.html')
-        self.response.write(template.render( template_values ))        
+        template = JINJA_ENVIRONMENT.get_template('/templates/calendar.html')
+        self.response.write(template.render( template_values ))   
+
+class ManageLists(webapp2.RequestHandler):
+    def get(self):
+        template = JINJA_ENVIRONMENT.get_template('/templates/manage_lists.html')
+        template_values = {}
+        self.response.write(template.render( template_values ))
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
+    ('/calendar', Calendar),
+    ('/manage_lists', ManageLists),
     (decorator.callback_path, decorator.callback_handler())
 ], debug=True)

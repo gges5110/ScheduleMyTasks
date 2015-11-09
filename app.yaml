@@ -9,10 +9,18 @@ handlers:
   static_files: favicon.ico
   upload: favicon\.ico
 
-- url: .*
+
+- url: /
   script: main.app
 - url: /oauth2callback
   script: main.MainHandler
+- url: /jquery
+  static_dir: jquery
+- url: /bootstrap
+  static_dir: bootstrap
+
+- url: .*
+  script: main.app
 
 libraries:
 - name: webapp2

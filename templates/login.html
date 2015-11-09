@@ -9,9 +9,8 @@
 {% endblock %}
 
 {% block content %}
-<p>{{event}}</p>
 
 {% if logged_in == false %}
-<a href="{{ event }}">{{ url_linktext }}</a>
+<p>logout.</p>
 {% endif %}
 {% endblock %}
