@@ -30,9 +30,21 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape = True
     )
 
+class Lists(ndb.Model):
+    list_name = ndb.StringProperty()
+    user = ndb.UserProperty()
+
+class Tasks(ndb.Model):
+    task_name = ndb.StringProperty()
+    estimate_finish_time = ndb.TimeProperty()
+    due_date = ndb.DateTimeProperty()
+    event_ID = ndb.StringProperty(default = "")
+    list_key = ndb.KeyProperty(kind = Lists)
+
+
 decorator = OAuth2DecoratorFromClientSecrets(
   os.path.join(os.path.dirname(__file__), 'client_secret.json'),
-  'https://www.googleapis.com/auth/calendar.readonly')
+  'https://www.googleapis.com/auth/calendar')
 
 service = build('calendar', 'v3')
 
