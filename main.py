@@ -91,7 +91,15 @@ class ManageLists(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
         email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
-        lists = List.query(List.user_email == email).fetch()
+        lists = []
+        for l in List.query(List.user_email == email).fetch():
+            temp = dict()
+            temp['name'] = l.name
+            temp['tasks'] = []
+            for t in  Task.query(Task.list_key == l.key):
+                temp['tasks'].append(t)
+            lists.append(temp)
+            
         template = JINJA_ENVIRONMENT.get_template('/templates/manage_lists.html')
         template_values = {
             'lists' : lists,
@@ -102,6 +110,12 @@ class ManageLists(webapp2.RequestHandler):
         # userinfo = user_service.userinfo().v2().me().get().execute(http = decorator.http())
         # userinfo = user_service.userinfo().get().execute(http = decorator.http())
         # self.response.write()
+
+class GetAllLists(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        self.response.write("Failed")
+    
 
 class CreateList(webapp2.RequestHandler):
     @decorator.oauth_required
