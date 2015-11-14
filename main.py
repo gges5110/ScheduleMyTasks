@@ -14,13 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import httplib2
 import webapp2
 import os
 import jinja2
 import datetime
+import json
 
 from google.appengine.ext import ndb
-from google.appengine.api import users
+from google.appengine.api import users, memcache
 from apiclient.discovery import build
 from oauth2client.appengine import OAuth2DecoratorFromClientSecrets
 
@@ -30,23 +32,24 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape = True
     )
 
-class Lists(ndb.Model):
-    list_name = ndb.StringProperty()
-    user = ndb.UserProperty()
+class List(ndb.Model):
+    name = ndb.StringProperty()
+    user_email = ndb.StringProperty()
 
-class Tasks(ndb.Model):
-    task_name = ndb.StringProperty()
+class Task(ndb.Model):
+    name = ndb.StringProperty()
     estimate_finish_time = ndb.TimeProperty()
     due_date = ndb.DateTimeProperty()
     event_ID = ndb.StringProperty(default = "")
-    list_key = ndb.KeyProperty(kind = Lists)
+    list_key = ndb.KeyProperty(kind = List)
 
 
 decorator = OAuth2DecoratorFromClientSecrets(
   os.path.join(os.path.dirname(__file__), 'client_secret.json'),
-  'https://www.googleapis.com/auth/calendar')
+  'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email')
 
-service = build('calendar', 'v3')
+calendar_service = build('calendar', 'v3')
+user_service = build('oauth2', 'v2')
 
 class MainHandler(webapp2.RequestHandler):    
     def get(self):        
@@ -61,9 +64,10 @@ class Calendar(webapp2.RequestHandler):
         http = decorator.http()
         now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
         # Call the service using the authorized Http object.
-        eventsResult = service.events().list(
-        calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
-        orderBy='startTime').execute(http=http)
+        eventsResult = calendar_service.events().list(
+            calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
+            orderBy='startTime'
+            ).execute(http=http)
         events = eventsResult.get('items', [])
         if not events:
             event_str = "no up coming events"
@@ -78,14 +82,30 @@ class Calendar(webapp2.RequestHandler):
         self.response.write(template.render( template_values ))   
 
 class ManageLists(webapp2.RequestHandler):
+    @decorator.oauth_required
     def get(self):
         template = JINJA_ENVIRONMENT.get_template('/templates/manage_lists.html')
         template_values = {}
-        self.response.write(template.render( template_values ))
+        # self.response.write(template.render( template_values ))
+        user_info = user_service.userinfo()
+        # userinfo = user_service.userinfo().v2().me().get().execute(http = decorator.http())
+        userinfo = user_service.userinfo().get().execute(http = decorator.http())
+        self.response.write(user_service.userinfo().get().execute(http = decorator.http()).get('email'))
+
+class CreateList(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def post(self):
+        new_list = List()
+        new_list.name = self.request.get('list_name')
+        new_list.user_email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+        new_list.put()
+        self.response.headers['Content-Type'] = 'text/plain'
+        self.response.write('Success')
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/calendar', Calendar),
     ('/manage_lists', ManageLists),
+    ('/api/create_lists', CreateList),
     (decorator.callback_path, decorator.callback_handler())
 ], debug=True)

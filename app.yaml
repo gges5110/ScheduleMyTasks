@@ -13,7 +13,7 @@ handlers:
 - url: /
   script: main.app
 - url: /oauth2callback
-  script: main.MainHandler
+  script: main.app
 - url: /jquery
   static_dir: jquery
 - url: /bootstrap
