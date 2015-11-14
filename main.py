@@ -63,6 +63,8 @@ class Calendar(webapp2.RequestHandler):
     def get(self):
         # Get the authorized Http object created by the decorator.
         http = decorator.http()
+        email = user_service.userinfo().get().execute(http=http).get('email')
+        
         now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
         # Call the service using the authorized Http object.
         eventsResult = calendar_service.events().list(
@@ -76,8 +78,11 @@ class Calendar(webapp2.RequestHandler):
             event = events[0]
             start = event['start'].get('dateTime', event['start'].get('date'))
             event_str = start + event['summary']
+
+
         template_values = {
-            'event' : event_str
+            'event' : event_str,
+            'email' : email
         }
         template = JINJA_ENVIRONMENT.get_template('/templates/calendar.html')
         self.response.write(template.render( template_values ))   
@@ -85,13 +90,18 @@ class Calendar(webapp2.RequestHandler):
 class ManageLists(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
+        email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+        lists = List.query(List.user_email == email).fetch()
         template = JINJA_ENVIRONMENT.get_template('/templates/manage_lists.html')
-        template_values = {}
-        # self.response.write(template.render( template_values ))
-        user_info = user_service.userinfo()
+        template_values = {
+            'lists' : lists,
+            'email' : email
+        }
+        self.response.write(template.render( template_values ))
+        # user_info = user_service.userinfo()
         # userinfo = user_service.userinfo().v2().me().get().execute(http = decorator.http())
-        userinfo = user_service.userinfo().get().execute(http = decorator.http())
-        self.response.write(user_service.userinfo().get().execute(http = decorator.http()).get('email'))
+        # userinfo = user_service.userinfo().get().execute(http = decorator.http())
+        # self.response.write()
 
 class CreateList(webapp2.RequestHandler):
     @decorator.oauth_required

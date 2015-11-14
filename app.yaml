@@ -14,10 +14,12 @@ handlers:
   script: main.app
 - url: /oauth2callback
   script: main.app
-- url: /jquery
-  static_dir: jquery
 - url: /bootstrap
   static_dir: bootstrap
+- url: /jquery
+  static_dir: jquery
+- url: /toastr
+  static_dir: toastr
 
 - url: .*
   script: main.app

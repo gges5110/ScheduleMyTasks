@@ -5,17 +5,104 @@
 <div class="container centered" id="container">
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h1>Existing Lists</h1>
+            <h1>Existing Lists for {{ email }}</h1>
         </div>
 
         <div class="panel-body">
+            <div class="row">   
+
+
+
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                          <th class="col-md-4"></th>
+                          <th class="col-md-4"></th>
+                          <th class="col-md-4"></th>                          
+                        </tr>
+                      </thead>
+
+
+                    <tbody>
+                        {% for list in lists %}
+                        {% if loop.index % 3 == 1 %}
+                        <tr>
+                        {% endif %}
+                        
+                        <td>
+                            <div class="col-sm-12">
+                              <div class="panel panel-default">
+                                <div class="panel-heading">
+                                  <h3 class="panel-title">{{ list.name }}</h3>
+                                </div>
+                                <div class="panel-body">
+                                  Panel content
+                                   <div class="col-sm-12">
+                                      <ul class="list-group">
+                                        <li class="list-group-item">First task</li>
+                                        <li class="list-group-item">Second task</li>                    
+                                        <li class="list-group-item">
+                                            <button class="btn btn-primary"> Create tasks </button>
+                                        </li>
+                                      </ul>
+                                    </div>
+                                </div>
+                              </div>
+                            </div>
+                               
+                        </td>
+                        {% if loop.index % 3 == 0 %}
+                        </tr>
+                        {% endif %}
+
+                        {% endfor %}
+                    </tbody>
+                </table>           
+
+                
+
+                
+                
+            </div>
+
+
+
             <div class="row">
-                <div>
-                    <Button class="btn btn-primary">Create list</Button>
-                    
+                <div>                    
+                    <div class="col-sm-4 col-sm-offset-4">
+                        <input type="text" name="list_name" class="form-control" id="list_name">
+                    </div>
+                    <div class="col-sm-4">
+                        <button class="btn btn-primary" type="submit" id="create_list_btn">Create List</button>
+                    </div>                    
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+$(document).ready(function() {
+    toastr.warning('Welcome!');      
+    $("#create_list_btn").on('click', function(e) {
+        
+        e.preventDefault();
+        var name = $('#list_name').val();
+        var res = "list_name=" + name;
+        toastr.warning('Creating list: ' + name);  
+        $.ajax({
+            type: 'POST',
+            url: 'api/create_lists',
+            data: res,
+            success: function(msg) {
+                console.log(msg)
+                if (msg === 'Success') {                                        
+                    // append new list
+                    toastr.success(name + 'List created!');                    
+                }          
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

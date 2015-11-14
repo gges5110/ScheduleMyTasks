@@ -1,13 +1,13 @@
 {% extends "/templates/base.html" %}
 {% block content %}
 <div class="container centered" id="container">
-    <div class="panel panel-default">
+    <div class="panel panel-primary">
         <div class="panel-heading">
+            <h1>Calendar for {{ email }}</h1>
         </div>
 
         <div class="panel-body">
-            <div>
-                Place calendar here. 
+            <div>                
                 <span>your next event is: {{ event }}</span>           
             </div>
         </div>
