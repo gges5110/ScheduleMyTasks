@@ -35,21 +35,19 @@
                                 <div class="panel-heading">
                                   <h3 class="panel-title">{{ list.name }}</h3>
                                 </div>
-                                <div class="panel-body">
-                                  Panel content
+                                <div class="panel-body">                                  
                                    <div class="col-sm-12">
                                       <ul class="list-group">
                                         <li class="list-group-item">First task</li>
-                                        <li class="list-group-item">Second task</li>                    
+                                        <li class="list-group-item">Second task</li>
                                         <li class="list-group-item">
-                                            <button class="btn btn-primary"> Create tasks </button>
+                                            <button class="btn btn-primary" id="create_task_opener"> Create tasks </button>
                                         </li>
                                       </ul>
                                     </div>
                                 </div>
                               </div>
-                            </div>
-                               
+                            </div>                               
                         </td>
                         {% if loop.index % 3 == 0 %}
                         </tr>
@@ -58,14 +56,7 @@
                         {% endfor %}
                     </tbody>
                 </table>           
-
-                
-
-                
-                
             </div>
-
-
 
             <div class="row">
                 <div>                    
@@ -81,9 +72,33 @@
     </div>
 </div>
 
+
+<div id="create_task" title="Create New Item">
+    
+</div>
+
 <script>
 $(document).ready(function() {
-    toastr.warning('Welcome!');      
+    
+    $( "#create_task" ).dialog({
+        autoOpen: false,
+        show: {
+          effect: "blind",
+          duration: 1000
+        },
+        hide: {
+          effect: "explode",
+          duration: 1000
+        }
+      });
+
+      $( "#create_task_opener" ).click(function() {
+        toastr.warning('Welcome!'); 
+        $( "#create_item" ).dialog( "open" );
+      });
+
+
+
     $("#create_list_btn").on('click', function(e) {
         
         e.preventDefault();

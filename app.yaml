@@ -16,6 +16,8 @@ handlers:
   script: main.app
 - url: /bootstrap
   static_dir: bootstrap
+- url: /jquery-ui
+  static_dir: jquery-ui
 - url: /jquery
   static_dir: jquery
 - url: /toastr

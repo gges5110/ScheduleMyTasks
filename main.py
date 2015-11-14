@@ -36,6 +36,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 class List(ndb.Model):
     name = ndb.StringProperty()
     user_email = ndb.StringProperty()
+    time_created = ndb.DateTimeProperty(auto_now_add = True)
 
 class Task(ndb.Model):
     name = ndb.StringProperty()
@@ -91,7 +92,7 @@ class ManageLists(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
         email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
-        lists = List.query(List.user_email == email).fetch()
+        lists = List.query(List.user_email == email).order(List.time_created).fetch()
         template = JINJA_ENVIRONMENT.get_template('/templates/manage_lists.html')
         template_values = {
             'lists' : lists,
