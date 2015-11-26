@@ -2,8 +2,10 @@
 
 {% block header %}
 {% if logged_in == true %}
+    <p>You are logged in.</p>
     {{ super() }}
 {% else %}
+    <p>You are not logged in.</p>
     <h1>Welcome to ScheduleMyTasks!</h1>
     <p>You can connect with your google calendar.</p>
     <p>You also can create todo lists.</p>

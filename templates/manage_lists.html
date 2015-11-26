@@ -9,7 +9,7 @@
         </div>
 
         <div class="panel-body">
-            <div class="row">   
+            <div class="row">
 
 
 
@@ -18,7 +18,7 @@
                         <tr>
                           <th class="col-md-4"></th>
                           <th class="col-md-4"></th>
-                          <th class="col-md-4"></th>                          
+                          <th class="col-md-4"></th>
                         </tr>
                       </thead>
 
@@ -28,14 +28,14 @@
                         {% if loop.index % 3 == 1 %}
                         <tr>
                         {% endif %}
-                        
+
                         <td>
                             <div class="col-sm-12">
                               <div class="panel panel-default">
                                 <div class="panel-heading">
                                   <h3 class="panel-title">{{ list['name'] }}</h3>
                                 </div>
-                                <div class="panel-body">                                  
+                                <div class="panel-body">
                                    <div class="col-sm-12">
                                       <ul class="list-group">
 
@@ -44,13 +44,13 @@
                                         {% endfor %}
 
                                         <li class="list-group-item">
-                                            <button class="btn btn-primary" id="create_task_opener"> Create tasks </button>
+                                            <button class="btn btn-primary create_task_opener"> Create tasks </button>
                                         </li>
                                       </ul>
                                     </div>
                                 </div>
                               </div>
-                            </div>                               
+                            </div>
                         </td>
                         {% if loop.index % 3 == 0 %}
                         </tr>
@@ -58,17 +58,17 @@
 
                         {% endfor %}
                     </tbody>
-                </table>           
+                </table>
             </div>
 
             <div class="row">
-                <div>                    
+                <div>
                     <div class="col-sm-4 col-sm-offset-4">
                         <input type="text" name="list_name" class="form-control" id="list_name">
                     </div>
                     <div class="col-sm-4">
                         <button class="btn btn-primary" type="submit" id="create_list_btn">Create List</button>
-                    </div>                    
+                    </div>
                 </div>
             </div>
         </div>
@@ -77,12 +77,12 @@
 
 
 <div id="create_task" title="Create New Item">
-    
+    <p>Hello!</p>
 </div>
 
 <script>
 $(document).ready(function() {
-    
+
     $( "#create_task" ).dialog({
         autoOpen: false,
         show: {
@@ -95,29 +95,37 @@ $(document).ready(function() {
         }
       });
 
-      $( "#create_task_opener" ).click(function() {
-        toastr.warning('Welcome!'); 
+      $( ".create_task_opener" ).click(function() {
+        toastr.warning('Welcome!');
         $( "#create_item" ).dialog( "open" );
+
+
+
+        var list_name = $(this).closest('.panel').children('div').children('h3').text();
+        // console.log('listname = ' + $(this).closest('.panel').val;
+
+        console.log('listname = ' + list_name);
+        BootstrapDialog.alert('I want banana' + list_name);
       });
 
 
 
     $("#create_list_btn").on('click', function(e) {
-        
+
         e.preventDefault();
         var name = $('#list_name').val();
         var res = "list_name=" + name;
-        toastr.warning('Creating list: ' + name);  
+        toastr.warning('Creating list: ' + name);
         $.ajax({
             type: 'POST',
             url: 'api/create_lists',
             data: res,
             success: function(msg) {
                 console.log(msg)
-                if (msg === 'Success') {                                        
+                if (msg === 'Success') {
                     // append new list
-                    toastr.success(name + 'List created!');                    
-                }          
+                    toastr.success(name + 'List created!');
+                }
             }
         });
     });

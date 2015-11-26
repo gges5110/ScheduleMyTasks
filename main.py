@@ -53,11 +53,11 @@ decorator = OAuth2DecoratorFromClientSecrets(
 calendar_service = build('calendar', 'v3')
 user_service = build('oauth2', 'v2')
 
-class MainHandler(webapp2.RequestHandler):    
-    def get(self):        
+class MainHandler(webapp2.RequestHandler):
+    def get(self):
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('/templates/login.html')
-        self.response.write(template.render( template_values ))     
+        self.response.write(template.render( template_values ))
 
 class Calendar(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -65,8 +65,8 @@ class Calendar(webapp2.RequestHandler):
         # Get the authorized Http object created by the decorator.
         http = decorator.http()
         email = user_service.userinfo().get().execute(http=http).get('email')
-        
-        now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
+
+        now = datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
         # Call the service using the authorized Http object.
         eventsResult = calendar_service.events().list(
             calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
@@ -86,7 +86,7 @@ class Calendar(webapp2.RequestHandler):
             'email' : email
         }
         template = JINJA_ENVIRONMENT.get_template('/templates/calendar.html')
-        self.response.write(template.render( template_values ))   
+        self.response.write(template.render( template_values ))
 
 class ManageLists(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -116,7 +116,7 @@ class GetAllLists(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
         self.response.write("Failed")
-    
+
 
 class CreateList(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -138,7 +138,7 @@ class CreateTask(webapp2.RequestHandler):
             new_task = Task()
             new_task.list_key = self.request.get('list_key')
             new_task.name = self.request.get('task_name')
-            new_task.due_date = datetime.strptime(self.request.get('due_date'), "%m/%d/%Y %I:%M %p") 
+            new_task.due_date = datetime.strptime(self.request.get('due_date'), "%m/%d/%Y %I:%M %p")
             new_task.estimated_finish_time = datetime.strptime(self.request.get('eft'), "%H:%M").time()
             self.response.write('Success')
         else:
