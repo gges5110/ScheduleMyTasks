@@ -34,13 +34,14 @@
                               <div class="panel panel-default">
                                 <div class="panel-heading">
                                   <h3 class="panel-title">{{ list['name'] }}</h3>
+                                  <input type="hidden" id="list_key" value="{{ list['key'] }}">
                                 </div>
                                 <div class="panel-body">
                                    <div class="col-sm-12">
                                       <ul class="list-group">
 
                                         {% for task in list['tasks'] %}
-                                            <li class="list-group-item">task.name</li>
+                                            <li class="list-group-item">{{ task.name }}</li>
                                         {% endfor %}
 
                                         <li class="list-group-item">
@@ -64,7 +65,7 @@
             <div class="row">
                 <div>
                     <div class="col-sm-4 col-sm-offset-4">
-                        <input type="text" name="list_name" class="form-control" id="list_name">
+                        <input type="text" class="form-control" id="list_name">
                     </div>
                     <div class="col-sm-4">
                         <button class="btn btn-primary" type="submit" id="create_list_btn">Create List</button>
@@ -75,50 +76,100 @@
     </div>
 </div>
 
+<div id="create_item" title="Create New Task">
+    <div>Task Name
+        <input type="text" class="form-control" id="task_name">
+    </div>
 
-<div id="create_task" title="Create New Item">
-    <p>Hello!</p>
+    <div class="row">
+        <div class="col-sm-12">Due Date</div>
+    </div>
+    <div>
+        <div class="col-sm-12">
+            <div class="form-group">
+                <div class="input-group date" id="datetimepicker1">
+                    <input type="text" class="form-control" id="due_date"/>
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+                <script type="text/javascript">
+                    $(function () {
+                        $('#datetimepicker1').datetimepicker();
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-8">
+            Estimated Finish Time
+            <input type="text" class="form-control" id="eft">
+        </div>
+    </div>
+    <div>
+        <button class="btn btn-success" id="create_task_btn">
+            Create
+        </button>
+    </div>
 </div>
 
 <script>
 $(document).ready(function() {
-
-    $( "#create_task" ).dialog({
+    var dialog, list_name, list_key;
+    dialog = $( "#create_item" ).dialog({
         autoOpen: false,
-        show: {
-          effect: "blind",
-          duration: 1000
-        },
-        hide: {
-          effect: "explode",
-          duration: 1000
+    });
+    
+    $( ".create_task_opener" ).click(function() {        
+        list_name = $(this).closest('.panel').children('div').children('h3').text();
+        list_key = $(this).closest('.panel').children('div').children('#list_key').val();
+        dialog.dialog( "open" );
+      //       title: 'Creating Task for ' + list_name,
+    });
+    
+    $('#create_task_btn').on('click', function(e) {        
+        var task_name = $('#task_name').val();
+        var eft = $('#eft').val();
+        var due_date = $('#due_date').val();
+        if(task_name === "" || eft === "" || due_date === "") {
+            toastr.warning('Every field must be filled!');            
         }
-      });
+        else {
+            var res = 'list_key=' + list_key;
+            res += '&task_name=' + task_name;
+            res += '&due_date=' + due_date;
+            res += '&eft=' + eft;
 
-      $( ".create_task_opener" ).click(function() {
-        toastr.warning('Welcome!');
-        $( "#create_item" ).dialog( "open" );
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: 'api/create_task',
+                data: res,
+                success: function(msg) {
+                    console.log(msg)
+                    if (msg === 'Success') {
+                        // append new task
+                        toastr.success(name + 'Task created!');
+                    }
+                }
+            });
+            dialog.dialog( "close" );
+        }
 
-
-
-        var list_name = $(this).closest('.panel').children('div').children('h3').text();
-        // console.log('listname = ' + $(this).closest('.panel').val;
-
-        console.log('listname = ' + list_name);
-        BootstrapDialog.alert('I want banana' + list_name);
-      });
+        
+    });
 
 
 
     $("#create_list_btn").on('click', function(e) {
-
         e.preventDefault();
         var name = $('#list_name').val();
         var res = "list_name=" + name;
         toastr.warning('Creating list: ' + name);
         $.ajax({
             type: 'POST',
-            url: 'api/create_lists',
+            url: 'api/create_list',
             data: res,
             success: function(msg) {
                 console.log(msg)
@@ -131,4 +182,5 @@ $(document).ready(function() {
     });
 });
 </script>
+
 {% endblock %}

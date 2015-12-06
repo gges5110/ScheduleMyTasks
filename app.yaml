@@ -14,6 +14,8 @@ handlers:
   script: main.app
 - url: /oauth2callback
   script: main.app
+- url: /bower_components
+  static_dir: bower_components
 - url: /bootstrap
   static_dir: bootstrap
 - url: /bootstrap3-dialog

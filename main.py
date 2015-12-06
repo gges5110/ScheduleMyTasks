@@ -96,6 +96,7 @@ class ManageLists(webapp2.RequestHandler):
         for l in List.query(List.user_email == email).fetch():
             temp = dict()
             temp['name'] = l.name
+            temp['key'] = l.key.urlsafe()
             temp['tasks'] = []
             for t in  Task.query(Task.list_key == l.key):
                 temp['tasks'].append(t)
@@ -133,13 +134,15 @@ class CreateTask(webapp2.RequestHandler):
     def post(self):
         self.response.headers['Content-Type'] = 'text/plain'
         current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+
         list_owner = ndb.Key(urlsafe = self.request.get('list_key')).get().user_email
         if current_user == list_owner:
             new_task = Task()
-            new_task.list_key = self.request.get('list_key')
+            new_task.list_key = ndb.Key(urlsafe = self.request.get('list_key')).get().key
             new_task.name = self.request.get('task_name')
             new_task.due_date = datetime.strptime(self.request.get('due_date'), "%m/%d/%Y %I:%M %p")
             new_task.estimated_finish_time = datetime.strptime(self.request.get('eft'), "%H:%M").time()
+            new_task.put()
             self.response.write('Success')
         else:
             self.response.write('Failed')
@@ -148,6 +151,7 @@ app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/calendar', Calendar),
     ('/manage_lists', ManageLists),
-    ('/api/create_lists', CreateList),
+    ('/api/create_list', CreateList),
+    ('/api/create_task', CreateTask),
     (decorator.callback_path, decorator.callback_handler())
 ], debug=True)
