@@ -10,56 +10,12 @@
 
         <div class="panel-body">
             <div class="row">
+                <ol>
+                    {% for list in lists %}
+                        <li><a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a></li>
+                    {% endfor %}
+                </ol>
 
-
-
-                <table class="table table-condensed">
-                    <thead>
-                        <tr>
-                          <th class="col-md-4"></th>
-                          <th class="col-md-4"></th>
-                          <th class="col-md-4"></th>
-                        </tr>
-                      </thead>
-
-
-                    <tbody>
-                        {% for list in lists %}
-                        {% if loop.index % 3 == 1 %}
-                        <tr>
-                        {% endif %}
-
-                        <td>
-                            <div class="col-sm-12">
-                              <div class="panel panel-default">
-                                <div class="panel-heading">
-                                  <h3 class="panel-title">{{ list['name'] }}</h3>
-                                  <input type="hidden" id="list_key" value="{{ list['key'] }}">
-                                </div>
-                                <div class="panel-body">
-                                   <div class="col-sm-12">
-                                      <ul class="list-group">
-
-                                        {% for task in list['tasks'] %}
-                                            <li class="list-group-item">{{ task.name }}</li>
-                                        {% endfor %}
-
-                                        <li class="list-group-item">
-                                            <button class="btn btn-primary create_task_opener"> Create tasks </button>
-                                        </li>
-                                      </ul>
-                                    </div>
-                                </div>
-                              </div>
-                            </div>
-                        </td>
-                        {% if loop.index % 3 == 0 %}
-                        </tr>
-                        {% endif %}
-
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
 
             <div class="row">
@@ -76,92 +32,8 @@
     </div>
 </div>
 
-<div id="create_item" title="Create New Task">
-    <div>Task Name
-        <input type="text" class="form-control" id="task_name">
-    </div>
-
-    <div class="row">
-        <div class="col-sm-12">Due Date</div>
-    </div>
-    <div>
-        <div class="col-sm-12">
-            <div class="form-group">
-                <div class="input-group date" id="datetimepicker1">
-                    <input type="text" class="form-control" id="due_date"/>
-                    <span class="input-group-addon">
-                        <span class="glyphicon glyphicon-calendar"></span>
-                    </span>
-                </div>
-                <script type="text/javascript">
-                    $(function () {
-                        $('#datetimepicker1').datetimepicker();
-                    });
-                </script>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-8">
-            Estimated Finish Time
-            <input type="text" class="form-control" id="eft">
-        </div>
-    </div>
-    <div>
-        <button class="btn btn-success" id="create_task_btn">
-            Create
-        </button>
-    </div>
-</div>
-
 <script>
 $(document).ready(function() {
-    var dialog, list_name, list_key;
-    dialog = $( "#create_item" ).dialog({
-        autoOpen: false,
-    });
-    
-    $( ".create_task_opener" ).click(function() {        
-        list_name = $(this).closest('.panel').children('div').children('h3').text();
-        list_key = $(this).closest('.panel').children('div').children('#list_key').val();
-        dialog.dialog( "open" );
-      //       title: 'Creating Task for ' + list_name,
-    });
-    
-    $('#create_task_btn').on('click', function(e) {        
-        var task_name = $('#task_name').val();
-        var eft = $('#eft').val();
-        var due_date = $('#due_date').val();
-        if(task_name === "" || eft === "" || due_date === "") {
-            toastr.warning('Every field must be filled!');            
-        }
-        else {
-            var res = 'list_key=' + list_key;
-            res += '&task_name=' + task_name;
-            res += '&due_date=' + due_date;
-            res += '&eft=' + eft;
-
-            event.preventDefault();
-            $.ajax({
-                type: 'POST',
-                url: 'api/create_task',
-                data: res,
-                success: function(msg) {
-                    console.log(msg)
-                    if (msg === 'Success') {
-                        // append new task
-                        toastr.success(name + 'Task created!');
-                    }
-                }
-            });
-            dialog.dialog( "close" );
-        }
-
-        
-    });
-
-
-
     $("#create_list_btn").on('click', function(e) {
         e.preventDefault();
         var name = $('#list_name').val();

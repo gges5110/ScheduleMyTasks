@@ -1,0 +1,237 @@
+{% extends "/templates/base.html" %}
+{% block content %}
+<style type="text/css">
+
+span.task_name_span {
+  display: inline-block;
+  width: 200px;
+}
+
+div.panel-body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 20px;
+}
+
+</style>
+
+<div class="container centered" id="container">
+    <div class="col-sm-8 col-sm-offset-2">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h1>{{ list.name }}</h1>
+            </div>
+
+            <div class="panel-body">
+                <div class="col-sm-12">
+                    <ul class="list-group">
+
+                    {% for task in tasks %}
+                        <li class="list-group-item" id="{{ task.key.urlsafe() }}">
+                            <span class="task_name_span">
+                                <a href="#" class="edit_task_opener">
+                                  {{ task.name }}
+                                </a>
+                            </span>
+                            <span class="task_due_date_span">
+                                {{ task.due_date }}
+                            </span>
+                            <a href="#">
+                                <i class="glyphicon glyphicon-remove delete_task"></i>
+                            </a>
+                        </li>
+                    {% endfor %}
+                    </ul>
+
+                    <button class="btn btn-primary create_task_opener">
+                        Create tasks
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    var create_dialog, edit_dialog, list_name, list_key;
+    create_dialog = $( "#create_item" ).dialog({
+        autoOpen: false
+    });
+
+    edit_dialog = $('#edit_task').dialog({
+      autoOpen: false
+    });
+
+    list_name = '{{ list.name }}';
+    list_key = '{{ list.key.urlsafe() }}';
+
+    $( '.task_name_span' ).on('click', '.edit_task_opener', function(event) {
+        toastr.warning('Edit task.');
+        edit_dialog.dialog('open');
+        var task_name = $(this).text();
+        console.log(task_name);
+        $('#task_name_edit').val($.trim(task_name));
+
+        var task_due_date = $(this).closest('li.list-group-item').children('.task_due_date_span').text();
+        $('#due_date_edit').val($.trim(task_due_date));
+    });
+
+
+
+    $( ".create_task_opener" ).click(function() {
+        create_dialog.dialog( "open" );
+    });
+
+    $('#create_task_btn').on('click', function(e) {
+        var task_name = $('#task_name').val();
+        var eft = $('#eft').val();
+        var due_date = $('#due_date').val();
+        if(task_name === "" || eft === "" || due_date === "") {
+            toastr.warning('Every field must be filled!');
+        }
+        else {
+            var res = 'list_key=' + list_key;
+            res += '&task_name=' + task_name;
+            res += '&due_date=' + due_date;
+            res += '&eft=' + eft;
+
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: 'api/create_task',
+                data: res,
+                success: appendTask
+            });
+
+            function appendTask(msg) {
+              create_dialog.dialog( "close" );
+              if (msg != 'Failed') {
+                  // append new task
+                  toastr.success(name + 'Task created!');
+                  $("ul.list-group").append("<li class=\"list-group-item\" id=\"" +
+                      msg +
+                      "\">" +
+                      task_name +
+                      "<a href=\"#\">" +
+                      "<i class=\"glyphicon glyphicon-remove delete_task\"></i>" +
+                      "</a></li>");
+              }
+            }
+        }
+    });
+
+    $('.list-group').on('click', '.delete_task', function(event) {
+        var task_key = $(this).closest('.list-group-item').attr('id');
+        var res = 'task_key=' + task_key;
+        // toastr.success('Task deleting!');
+        event.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: 'api/delete_task',
+            data: res,
+            success: function(msg) {
+                console.log(msg)
+                if (msg === 'Success') {
+                    // append new task
+                    var task_li = $('li.list-group-item#' + task_key);
+                    task_li.remove();
+                    toastr.success('Task deleted!');
+                }
+            }
+        });
+    });
+});
+</script>
+
+<div id='edit_task' title='Edit Task'>
+    <div>Task Name
+        <input type="text" class="form-control" id="task_name_edit">
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            Due Date
+        </div>
+    </div>
+
+    <div>
+        <div class="col-sm-12">
+            <div class="form-group">
+                <div class="input-group date" id="datetimepicker2">
+                    <input type="text" class="form-control" id="due_date_edit"/>
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+                <script type="text/javascript">
+                    $(function () {
+                        $('#datetimepicker2').datetimepicker();
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-8">
+            <button class="btn btn-primary" id="edit_task_btn">
+                Edit
+            </button>
+        </div>   
+    </div>
+</div>
+
+
+<div id="create_item" title="Create New Task">
+    <div>Task Name
+        <input type="text" class="form-control" id="task_name">
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            Due Date
+        </div>
+    </div>
+
+    <div>
+        <div class="col-sm-12">
+            <div class="form-group">
+                <div class="input-group date" id="datetimepicker1">
+                    <input type="text" class="form-control" id="due_date"/>
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+                <script type="text/javascript">
+                    $(function () {
+                        $('#datetimepicker1').datetimepicker();
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-8">
+            Estimated Finish Time
+            <!-- <input type="text" class="form-control" id="eft"> -->
+            <select id="eft">
+            {% for option in eft_choices %}
+                <option value={{ option }} selected>{{ option }}</option>
+            {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-8">
+            <button class="btn btn-primary" id="create_task_btn">
+                Create
+            </button>
+        <div class="col-sm-8">
+    </div>
+</div>
+
+
+
+{% endblock %}

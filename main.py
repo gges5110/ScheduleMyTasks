@@ -20,7 +20,7 @@ import os
 import jinja2
 import datetime
 import json
-from datetime import datetime
+from datetime import datetime, date, time, timedelta
 
 from google.appengine.ext import ndb
 from google.appengine.api import users, memcache
@@ -88,19 +88,29 @@ class Calendar(webapp2.RequestHandler):
         template = JINJA_ENVIRONMENT.get_template('/templates/calendar.html')
         self.response.write(template.render( template_values ))
 
+class ManageTasks(webapp2.RequestHandler):
+    def get(self):
+        eft_choices = []
+        start_time = datetime.combine(date.today(), time(0,0))
+        for i in range(0,47):
+            start_time = start_time + timedelta(minutes = 30)
+            eft_choices.append(start_time.strftime("%H:%M"))
+
+        list_key = ndb.Key(urlsafe = self.request.get('list_key'))
+        tasks = Task.query(Task.list_key == list_key)
+        template = JINJA_ENVIRONMENT.get_template('/templates/manage_tasks.html')
+        template_values = {
+            'list' : list_key.get(),
+            'tasks': tasks.fetch(),
+            'eft_choices' : eft_choices
+        }
+        self.response.write(template.render(template_values))
+
 class ManageLists(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
         email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
-        lists = []
-        for l in List.query(List.user_email == email).fetch():
-            temp = dict()
-            temp['name'] = l.name
-            temp['key'] = l.key.urlsafe()
-            temp['tasks'] = []
-            for t in  Task.query(Task.list_key == l.key):
-                temp['tasks'].append(t)
-            lists.append(temp)
+        lists = List.query(List.user_email == email).fetch()
 
         template = JINJA_ENVIRONMENT.get_template('/templates/manage_lists.html')
         template_values = {
@@ -143,15 +153,25 @@ class CreateTask(webapp2.RequestHandler):
             new_task.due_date = datetime.strptime(self.request.get('due_date'), "%m/%d/%Y %I:%M %p")
             new_task.estimated_finish_time = datetime.strptime(self.request.get('eft'), "%H:%M").time()
             new_task.put()
-            self.response.write('Success')
+            self.response.write(new_task.key.urlsafe())
         else:
             self.response.write('Failed')
+
+class DeleteTask(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def post(self):
+        self.response.headers['Content-Type'] = 'text/plain'
+        task_key = ndb.Key(urlsafe = self.request.get('task_key'))
+        task_key.delete()
+        self.response.write('Success')
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/calendar', Calendar),
     ('/manage_lists', ManageLists),
+    ('/manage_tasks', ManageTasks),
     ('/api/create_list', CreateList),
     ('/api/create_task', CreateTask),
+    ('/api/delete_task', DeleteTask),
     (decorator.callback_path, decorator.callback_handler())
 ], debug=True)
