@@ -12,39 +12,79 @@ div.panel-body {
     font-size: 20px;
 }
 
+div.panel-heading {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 20px;
+}
+
 </style>
 
 <div class="container centered" id="container">
-    <div class="col-sm-8 col-sm-offset-2">
-        <div class="panel panel-primary">
+    <div class="col-md-8 col-md-offset-2">
+        <div class="panel panel-default">
             <div class="panel-heading">
-                <h1>{{ list.name }}</h1>
+                <div class="col-md-8">
+                    {{ list.name }}
+                </div>
+
+                <div class="col-md-4 text-right">
+                    <form action="/manage_lists">
+                        <button type="submit" class="btn btn-md btn-info">Back to lists</button>
+                    </form>
+                </div>
+                <div id="intelligent_gap"></div>
             </div>
 
             <div class="panel-body">
-                <div class="col-sm-12">
-                    <ul class="list-group">
-
-                    {% for task in tasks %}
-                        <li class="list-group-item" id="{{ task.key.urlsafe() }}">
-                            <span class="task_name_span">
-                                <a href="#" class="edit_task_opener">
-                                  {{ task.name }}
+                <div class="col-md-12">
+                    {% if tasks %}
+                        <ul class="list-group">
+                        {% for task in tasks %}
+                            <li class="list-group-item" id="{{ task.key.urlsafe() }}">
+                                <span class="task_name_span">
+                                    <a href="#" class="edit_task_opener">
+                                      {{ task.name }}
+                                    </a>
+                                </span>
+                                <span class="task_due_date_span">
+                                    {{ task.due_date }}
+                                </span>
+                                <a href="#">
+                                    <i class="glyphicon glyphicon-remove delete_task"></i>
                                 </a>
-                            </span>
-                            <span class="task_due_date_span">
-                                {{ task.due_date }}
-                            </span>
-                            <a href="#">
-                                <i class="glyphicon glyphicon-remove delete_task"></i>
-                            </a>
-                        </li>
-                    {% endfor %}
-                    </ul>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="tile">
+                            <div class="jumbotron text-center">
+                                <h2>The list is empty</h2>
+                            </div>
+                        </div>
+                    {% endif %}
 
-                    <button class="btn btn-primary create_task_opener">
-                        Create tasks
-                    </button>
+
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <button class="btn btn-primary create_task_opener">
+                                Create tasks
+                            </button>
+                        </div>
+                        <div class="col-sm-3">
+                            <form action="/calendar">
+                                <button type="submit" class="btn btn-success" id="on_calendar">
+                                    Calendar On
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-sm-3">
+                            <form action="/calendar">
+                                <button type="submit" class="btn btn-danger" id="off_calendar">
+                                    Calendar Off
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -177,7 +217,7 @@ $(document).ready(function() {
             <button class="btn btn-primary" id="edit_task_btn">
                 Edit
             </button>
-        </div>   
+        </div>
     </div>
 </div>
 

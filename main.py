@@ -37,6 +37,7 @@ class List(ndb.Model):
     name = ndb.StringProperty()
     user_email = ndb.StringProperty()
     time_created = ndb.DateTimeProperty(auto_now_add = True)
+    on_calendar = ndb.BooleanProperty(default = False)
 
 class Task(ndb.Model):
     name = ndb.StringProperty()
@@ -69,8 +70,7 @@ class Calendar(webapp2.RequestHandler):
         now = datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
         # Call the service using the authorized Http object.
         eventsResult = calendar_service.events().list(
-            calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
-            orderBy='startTime'
+            calendarId='primary', timeMin=now, maxResults=10
             ).execute(http=http)
         events = eventsResult.get('items', [])
         if not events:
@@ -80,10 +80,13 @@ class Calendar(webapp2.RequestHandler):
             start = event['start'].get('dateTime', event['start'].get('date'))
             event_str = start + event['summary']
 
+        lists = List.query(List.user_email == email).order(List.time_created).fetch()
 
         template_values = {
             'event' : event_str,
-            'email' : email
+            'email' : email,
+            'lists' : lists
+
         }
         template = JINJA_ENVIRONMENT.get_template('/templates/calendar.html')
         self.response.write(template.render( template_values ))
@@ -110,7 +113,7 @@ class ManageLists(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
         email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
-        lists = List.query(List.user_email == email).fetch()
+        lists = List.query(List.user_email == email).order(List.time_created).fetch()
 
         template = JINJA_ENVIRONMENT.get_template('/templates/manage_lists.html')
         template_values = {
@@ -128,6 +131,77 @@ class GetAllLists(webapp2.RequestHandler):
     def get(self):
         self.response.write("Failed")
 
+class GetCalendarEvent(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        time_min = self.request.get('start')
+        time_max = self.request.get('end')
+
+        http = decorator.http()
+        # Call the service using the authorized Http object.
+        eventsResult = calendar_service.events().list(
+            calendarId='primary', timeMin=time_min, timeMax=time_max).execute(http=http)
+        events = eventsResult.get('items', [])
+        event_list = []
+        for event in events:
+            event_dict = dict()
+            if 'status' in event and event['status'] == 'cancelled':
+                break
+            if 'summary' in event:
+                event_dict['title'] = event['summary']
+            if 'start' in event:
+                if 'dateTime' in event['start']:
+                    event_dict['start'] = event['start'].get('dateTime')
+                    event_dict['end'] = event['end'].get('dateTime')
+                else:
+                    event_dict['start'] = event['start'].get('date')
+                    event_dict['end'] = event['end'].get('date')
+            event_list.append(event_dict)
+
+        obj = dict()
+        obj['event_list'] = event_list
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(obj))
+
+class GetListOffCalendar(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        list_key = ndb.Key(urlsafe = self.request.get('list_key'))
+        list = list_key.get()
+        list.on_calendar = False
+        list.put()
+        obj = dict()
+        obj['status'] = 'Success'
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(obj))
+
+class PutListOnCalendar(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        list_key = ndb.Key(urlsafe = self.request.get('list_key'))
+        list = list_key.get()
+        if list.on_calendar == False:
+            list.on_calendar = True
+            list.put()
+            tasks = Task.query(Task.list_key == list_key).fetch()
+            task_list = []
+            for task in tasks:
+                task_dict = dict()
+                task_dict['start'] = task.due_date.isoformat()
+                task_dict['title'] = task.name
+                task_list.append(task_dict)
+            obj = dict()
+            obj['task_list'] = task_list
+            obj['status'] = 'off_calendar'
+            self.response.headers['Content-Type'] = 'application/json'
+            self.response.out.write(json.dumps(obj))
+        else:
+            obj = dict()
+            obj['status'] = 'on_calendar'
+            self.response.headers['Content-Type'] = 'application/json'
+            self.response.out.write(json.dumps(obj))
+
+
 
 class CreateList(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -137,7 +211,7 @@ class CreateList(webapp2.RequestHandler):
         new_list.user_email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
         new_list.put()
         self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write('Success')
+        self.response.write(new_list.key.urlsafe())
 
 class CreateTask(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -170,6 +244,9 @@ app = webapp2.WSGIApplication([
     ('/calendar', Calendar),
     ('/manage_lists', ManageLists),
     ('/manage_tasks', ManageTasks),
+    ('/api/get_calendar_event', GetCalendarEvent),
+    ('/api/put_list_on_calendar', PutListOnCalendar),
+    ('/api/get_list_off_calendar', GetListOffCalendar),
     ('/api/create_list', CreateList),
     ('/api/create_task', CreateTask),
     ('/api/delete_task', DeleteTask),

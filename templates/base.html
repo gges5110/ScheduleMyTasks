@@ -7,8 +7,8 @@
     <script src="/jquery/jquery-1.11.3.js"></script>
 
     <!-- jQuery UI -->
-    <link rel="stylesheet" href="jquery-ui/jquery-ui.min.css" />    
-    <script src="./jquery-ui/jquery-ui.min.js"></script> 
+    <link rel="stylesheet" href="jquery-ui/jquery-ui.min.css" />
+    <script src="./jquery-ui/jquery-ui.min.js"></script>
 
     <!-- Bootstrap -->
     <script src="/bootstrap/js/bootstrap.min.js"></script>
@@ -22,16 +22,16 @@
     <script type="text/javascript" src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
     <link rel="stylesheet" href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" />
 
-
-    <!-- fullcalendar -->    
+    <!-- fullcalendar -->
     <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.min.css" />
     <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.print.css" media='print'/>
-    <script type="text/javascript" src="/bower_components/fullcalendar/dist/fullcalendar.min.js"></script>  
+    <script type="text/javascript" src="/bower_components/fullcalendar/dist/fullcalendar.min.js"></script>
 
     <!-- toastr -->
     <link href="./toastr/toastr.css" rel="stylesheet"/>
     <script type="text/javascript" src="./toastr/toastr.js"></script>
 
+    <link href="/bootstrap/css/theme.css" rel="stylesheet"/>
   </head>
   <body>
     <!-- Fixed navbar -->
@@ -73,10 +73,12 @@
 
     {% block header %}
     {% endblock %}
-    
+
     {% block content %}
-    {% endblock %} 
+    {% endblock %}
     </div>
   </body>
 </html>
+
+
 {% endautoescape %}
