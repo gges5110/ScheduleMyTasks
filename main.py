@@ -170,36 +170,62 @@ class GetListOffCalendar(webapp2.RequestHandler):
         list = list_key.get()
         list.on_calendar = False
         list.put()
+
+        tasks = Task.query(Task.list_key == list_key).fetch()
+        task_list = []
+        for task in tasks:
+            task_dict = dict()
+            task_dict['event_ID'] = task.key.id()
+            task_list.append(task_dict)
         obj = dict()
+        obj['task_list'] = task_list
         obj['status'] = 'Success'
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(obj))
+
+class LoadDefaultOnCalendar(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        list_keys = self.request.get_all('list_key')
+        task_list = []
+        for list_key in list_keys:
+            list_key1 = ndb.Key(urlsafe=list_key)
+            tasks = Task.query(Task.list_key == list_key1).fetch()
+            for task in tasks:
+                task_dict = dict()
+                task_dict['start'] = task.due_date.isoformat()
+                task_dict['title'] = task.name
+                task_dict['event_ID'] = task.key.id()
+                task_list.append(task_dict)
+        obj = dict()
+        obj['task_list'] = task_list
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(obj))
 
 class PutListOnCalendar(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
+        task_list = []
         list_key = ndb.Key(urlsafe = self.request.get('list_key'))
         list = list_key.get()
+        tasks = Task.query(Task.list_key == list_key).fetch()
+        for task in tasks:
+            task_dict = dict()
+            task_dict['start'] = task.due_date.isoformat()
+            task_dict['title'] = task.name
+            task_dict['event_ID'] = task.key.id()
+            task_list.append(task_dict)
+
+        obj = dict()
+        obj['task_list'] = task_list
         if list.on_calendar == False:
-            list.on_calendar = True
-            list.put()
-            tasks = Task.query(Task.list_key == list_key).fetch()
-            task_list = []
-            for task in tasks:
-                task_dict = dict()
-                task_dict['start'] = task.due_date.isoformat()
-                task_dict['title'] = task.name
-                task_list.append(task_dict)
-            obj = dict()
-            obj['task_list'] = task_list
             obj['status'] = 'off_calendar'
-            self.response.headers['Content-Type'] = 'application/json'
-            self.response.out.write(json.dumps(obj))
         else:
-            obj = dict()
             obj['status'] = 'on_calendar'
-            self.response.headers['Content-Type'] = 'application/json'
-            self.response.out.write(json.dumps(obj))
+        list.on_calendar = True
+        list.put()
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(obj))
 
 
 
@@ -247,6 +273,7 @@ app = webapp2.WSGIApplication([
     ('/api/get_calendar_event', GetCalendarEvent),
     ('/api/put_list_on_calendar', PutListOnCalendar),
     ('/api/get_list_off_calendar', GetListOffCalendar),
+    ('/api/load_default_on_calendar', LoadDefaultOnCalendar),
     ('/api/create_list', CreateList),
     ('/api/create_task', CreateTask),
     ('/api/delete_task', DeleteTask),

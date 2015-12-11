@@ -64,7 +64,6 @@ div.list_container {
                                 <button class="btn btn-success calendar_on" disabled id="{{ list.key.urlsafe() }}">Calendar On</button>
                                 <button class="btn btn-danger calendar_off" id="{{ list.key.urlsafe() }}">Calendar Off</button>
                                 {% endif %}
-
                             </li>
                         {% endfor %}
                     </ol>
@@ -78,13 +77,9 @@ div.list_container {
 $(function() { // document ready
     // TODO default tasks from on_calendar lists
 
-
     $('.calendar_off').on('click', function(e) {
         var list_key = $(this).attr('id');
         toastr.success('Take the list off the calendar.');
-        // TODO: remove event source from fullcalendar api
-
-
         //TODO: send AJAX to backend to set on_calendar to False
         var $ajax = $.getJSON('/api/get_list_off_calendar',
             {
@@ -93,6 +88,11 @@ $(function() { // document ready
             function(msg) {
                 console.log(msg.status);
                 if(msg.status === 'Success') {
+                    // TODO: remove event source from fullcalendar api
+                    $.each( msg.task_list, function(index, element) {
+                        $('#calendar').fullCalendar( 'removeEvents', element.event_ID );
+                    });
+
                     //TODO: toggle front end buttons
                     $('.calendar_off#' + list_key).addClass("disabled");
                     $('.calendar_off#' + list_key).attr("disabled", true);
@@ -107,6 +107,8 @@ $(function() { // document ready
     });
 
 
+
+
     $('.calendar_on').on('click', function(e) {
         var list_key = $(this).attr('id');
         toastr.success('Put list on calendar.');
@@ -117,12 +119,14 @@ $(function() { // document ready
                     list_key: list_key
                 },
                 function(event) {
+                    console.log('event status = ' + event.status);
                     if(event.status === 'off_calendar') {
                         var events = [];
                         $.each( event.task_list, function(index, element) {
                             events.push({
                                 title: element.title,
-                                start: element.start
+                                start: element.start,
+                                id : element.event_ID
                             });
                         });
                         callback(events);
@@ -150,29 +154,63 @@ $(function() { // document ready
         defaultDate: '2015-11-12',
         editable: true,
         eventLimit: true, // allow "more" link when too many events
-        events: function(start, end, timezone, callback) {
-            var start_date = new Date(start.unix()*1000);
-            var end_date = new Date(end.unix()*1000);
-            var $ajax = $.getJSON(
-                '/api/get_calendar_event',
-                {
-                    start: start_date.toISOString(),
-                    end: end_date.toISOString()
-                },
-                function(event) {
-                    var events = [];
-                    $.each( event.event_list, function(index, element) {
-                        events.push({
-                            title: element.title,
-                            start: element.start,
-                            end: element.end,
-                        });
-                    });
-                    callback(events);
+        eventSources: [
+            // your event source
+            {
+                events: function(start, end, timezone, callback) {
+                    var start_date = new Date(start.unix()*1000);
+                    var end_date = new Date(end.unix()*1000);
+                    var $ajax = $.getJSON(
+                        '/api/get_calendar_event',
+                        {
+                            start: start_date.toISOString(),
+                            end: end_date.toISOString()
+                        },
+                        function(event) {
+                            var events = [];
+                            $.each( event.event_list, function(index, element) {
+                                events.push({
+                                    title: element.title,
+                                    start: element.start,
+                                    end: element.end,
+                                    color: '#378006'
+                                });
+                            });
+                            callback(events);
+                        }
+                    );
                 }
-            );
-        }
+            },
+            {
+                events: function( start, end, timezone, callback ) {
+                    var res = '';
+                    {% for list in lists %}
+                        {% if list.on_calendar %}
+                            res += 'list_key={{ list.key.urlsafe() }}&';
+                        {% endif%}
+                    {% endfor %}
+                    toastr.success('Send AJAX');
+                    var $ajax = $.getJSON(
+                        '/api/load_default_on_calendar',
+                        res,
+                        function(event) {
+                            toastr.success('Got default events');
+                            var events = [];
+                            $.each( event.task_list, function(index, element) {
+                                events.push({
+                                    title: element.title,
+                                    start: element.start,
+                                    id : element.event_ID
+                                });
+                            });
+                            callback(events);
+                        }
+                    );
+                },
+            }
+        ]
     });
+
 });
 </script>
 
