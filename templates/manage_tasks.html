@@ -194,6 +194,7 @@ $(document).ready(function() {
               if (msg != 'Failed') {
                   // append new task
                   toastr.success(name + 'Task created!');
+                    // TODO add new task
                   $("ul.list-group").append("<li class=\"list-group-item\" id=\"" +
                       msg +
                       "\">" +
@@ -284,7 +285,11 @@ $(document).ready(function() {
             <!-- <input type="text" class="form-control" id="eft"> -->
             <select id="eft_edit">
             {% for option in eft_choices %}
+                {% if loop.first %}
                 <option value={{ option }} selected>{{ option }}</option>
+                {% else %}
+                <option value={{ option }}>{{ option }}</option>
+                {% endif %}
             {% endfor %}
             </select>
         </div>
