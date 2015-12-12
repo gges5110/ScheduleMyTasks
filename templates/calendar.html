@@ -51,29 +51,62 @@ div.list_container {
                     <div id='calendar'></div>
                 </div>
                 <div class="col-sm-3">
-                    <ol class='todo_list'>
-                        {% for list in lists %}
-                            <li class="task_container_list">
-                                <span class="list_name_span">
-                                    <a href="#" data-toggle="modal" data-target="#myModal" class="list_modal" id="{{ list.key.urlsafe() }}">{{ list.name }}</a>
-                                </span>
-                                <div>
-                                {% if not list.on_calendar %}
-                                <button class="btn btn-success calendar_on" id="{{ list.key.urlsafe() }}">On</button>
-                                <button class="btn btn-danger calendar_off" disabled id="{{ list.key.urlsafe() }}">Off</button>
-                                {% else %}
-                                <button class="btn btn-success calendar_on" disabled id="{{ list.key.urlsafe() }}">On</button>
-                                <button class="btn btn-danger calendar_off" id="{{ list.key.urlsafe() }}">Off</button>
-                                {% endif %}
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ol>
-                    <button class="btn btn-primary" id="schedule_btn">Schedule</button>
-                    <button class="btn btn-warning" id="save_schedule_btn">Save</button>
+
+                    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                    {% for list in lists %}
+
+                      <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading{{ loop.index }}">
+                          <h4 class="panel-title">
+                            <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse{{ loop.index }}" aria-expanded="true" aria-controls="collapse{{ loop.index }}">
+                              <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                              {{ list['name'] }}
+                            </a>
+                          </h4>
+                        </div>
+                        <div id="collapse{{ loop.index }}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{ loop.index }}">
+                          <div class="panel-body">
+                              {% for task in list['tasks'] %}
+                                 <li class="list-group-item">
+                                     <span class="task_name_span_modal">
+                                         {{ task.name }}
+                                     </span>
+
+                                 </li>
+                             {% endfor %}
+
+                             <div class="panel-footer clearfix">
+                                 <div class="pull-right">
+                                 {% if not list['on_calendar'] %}
+                                 <button class="btn btn-success calendar_on" id="{{ list['key'] }}">On</button>
+                                 <button class="btn btn-danger calendar_off" disabled id="{{ list['key'] }}">Off</button>
+                                 {% else %}
+                                 <button class="btn btn-success calendar_on" disabled id="{{ list['key'] }}">On</button>
+                                 <button class="btn btn-danger calendar_off" id="{{ list['key'] }}">Off</button>
+                                 {% endif %}
+                                 </div>
+                             </div>
+
+                          </div>
+                        </div>
+                      </div>
+                    {% endfor %}
+                    <div class="panel-footer clearfix">
+                        <div class="pull-right">
+                            <button class="btn btn-primary" id="schedule_btn">Schedule</button>
+                            <button class="btn btn-warning" id="save_schedule_btn">Save</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        <div class="panel-footer clearfix">
+            <div class="pull-right">
+                <a href="#" class="btn btn-primary">Learn More</a>
+                <a href="#" class="btn btn-default">Go Back</a>
+            </div>
+        </div>
+        <div class="push"></div>
     </div>
 </div>
 
@@ -103,6 +136,32 @@ $(function() { // document ready
 
     $(document).on('click', '#schedule_btn', function(e) {
         toastr.success('Schedule!');
+        var source = function( start, end, timezone, callback ) {
+            $.ajax({
+                url: '/api/schedule',
+                data: {
+                    task_key: tasks_to_schedule
+                },
+                traditional: true,
+                success: function(event) {
+                    var events = [];
+                    $.each( event.schedule_list, function(index, element) {
+                        toastr.success('Schedule' + element.name);
+                        if(element.status == 'confirmed') {
+                            events.push({
+                                title: element.name,
+                                start: element.start,
+                                end: element.end,
+                                id : element.name + 'schedule',
+                                color: '#f7cac9'
+                            });
+                        }
+                    });
+                    callback(events);
+                }
+            });
+        }
+        $('#calendar').fullCalendar( 'addEventSource', source );
     });
 
     $(document).on('click', '.list_modal', function(e) {
@@ -150,27 +209,27 @@ $(function() { // document ready
         );
     });
 
-    // TODO: On closing the modal dialog, push all tasks that have been checked.
-    $(document).on('click', '.modal_close', function(e) {
-        $(".list-group-item .checkbox-inline input:checked").each(
-            function() {
-                var task_key = $(this).attr('id');
-                var index_in_array = $.inArray(task_key, tasks_to_schedule);
-                if(index_in_array == -1){
-                    tasks_to_schedule.push(task_key);
-                }
-            }
-        );
-        $(".list-group-item .checkbox-inline input:checkbox:not(:checked)").each(
-            function() {
-                var task_key = $(this).attr('id');
-                var index_in_array = $.inArray(task_key, tasks_to_schedule);
-                if( index_in_array!= -1){
-                    tasks_to_schedule.splice(index_in_array, 1);
-                }
-            }
-        )
-    });
+    // // TODO: On closing the modal dialog, push all tasks that have been checked.
+    // $(document).on('click', '.modal_close', function(e) {
+    //     $(".list-group-item .checkbox-inline input:checked").each(
+    //         function() {
+    //             var task_key = $(this).attr('id');
+    //             var index_in_array = $.inArray(task_key, tasks_to_schedule);
+    //             if(index_in_array == -1){
+    //                 tasks_to_schedule.push(task_key);
+    //             }
+    //         }
+    //     );
+    //     $(".list-group-item .checkbox-inline input:checkbox:not(:checked)").each(
+    //         function() {
+    //             var task_key = $(this).attr('id');
+    //             var index_in_array = $.inArray(task_key, tasks_to_schedule);
+    //             if( index_in_array!= -1){
+    //                 tasks_to_schedule.splice(index_in_array, 1);
+    //             }
+    //         }
+    //     )
+    // });
 
     $(document).on('click', '.calendar_off', function(e) {
         var list_key = $(this).attr('id');
@@ -243,7 +302,7 @@ $(function() { // document ready
           center: 'title',
           right: 'month,agendaWeek,agendaDay'
         },
-        defaultDate: '2015-11-12',
+        defaultDate: '2015-12-12',
         editable: true,
         eventLimit: true, // allow "more" link when too many events
         eventSources: [
@@ -278,7 +337,7 @@ $(function() { // document ready
                     var res = '';
                     {% for list in lists %}
                         {% if list.on_calendar %}
-                            res += 'list_key={{ list.key.urlsafe() }}&';
+                            res += 'list_key={{ list["key"] }}&';
                         {% endif%}
                     {% endfor %}
                     var $ajax = $.getJSON(

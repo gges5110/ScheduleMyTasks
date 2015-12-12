@@ -35,11 +35,13 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape = True
     )
 
+
 class List(ndb.Model):
     name = ndb.StringProperty()
     user_email = ndb.StringProperty()
     time_created = ndb.DateTimeProperty(auto_now_add = True)
     on_calendar = ndb.BooleanProperty(default = False)
+
 
 class Task(ndb.Model):
     name = ndb.StringProperty()
@@ -56,11 +58,13 @@ decorator = OAuth2DecoratorFromClientSecrets(
 calendar_service = build('calendar', 'v3')
 user_service = build('oauth2', 'v2')
 
+
 class MainHandler(webapp2.RequestHandler):
     def get(self):
         template_values = {}
         template = JINJA_ENVIRONMENT.get_template('/templates/login.html')
         self.response.write(template.render( template_values ))
+
 
 class Calendar(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -68,30 +72,41 @@ class Calendar(webapp2.RequestHandler):
         # Get the authorized Http object created by the decorator.
         http = decorator.http()
         email = user_service.userinfo().get().execute(http=http).get('email')
+        #
+        # now = datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
+        # # Call the service using the authorized Http object.
+        # eventsResult = calendar_service.events().list(
+        #     calendarId='primary', timeMin=now, maxResults=10
+        #     ).execute(http=http)
+        # events = eventsResult.get('items', [])
+        # if not events:
+        #     event_str = "no up coming events"
+        # else:
+        #     event = events[0]
+        #     start = event['start'].get('dateTime', event['start'].get('date'))
+        #     event_str = start + event['summary']
 
-        now = datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-        # Call the service using the authorized Http object.
-        eventsResult = calendar_service.events().list(
-            calendarId='primary', timeMin=now, maxResults=10
-            ).execute(http=http)
-        events = eventsResult.get('items', [])
-        if not events:
-            event_str = "no up coming events"
-        else:
-            event = events[0]
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            event_str = start + event['summary']
+        # lists = List.query(List.user_email == email).order(List.time_created).fetch()
 
-        lists = List.query(List.user_email == email).order(List.time_created).fetch()
+        lists = []
+        for l in List.query(List.user_email == email).fetch():
+            temp = dict()
+            temp['name'] = l.name
+            temp['key'] = l.key.urlsafe()
+            temp['on_calendar'] = l.on_calendar
+            temp['tasks'] = []
+            for t in  Task.query(Task.list_key == l.key):
+                temp['tasks'].append(t)
+            lists.append(temp)
 
         template_values = {
-            'event' : event_str,
             'email' : email,
             'lists' : lists
-
         }
+
         template = JINJA_ENVIRONMENT.get_template('/templates/calendar.html')
         self.response.write(template.render( template_values ))
+
 
 class ManageTasks(webapp2.RequestHandler):
     def get(self):
@@ -111,6 +126,7 @@ class ManageTasks(webapp2.RequestHandler):
         }
         self.response.write(template.render(template_values))
 
+
 class ManageLists(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
@@ -128,10 +144,12 @@ class ManageLists(webapp2.RequestHandler):
         # userinfo = user_service.userinfo().get().execute(http = decorator.http())
         # self.response.write()
 
+
 class GetAllLists(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
         self.response.write("Failed")
+
 
 class GetCalendarEvent(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -165,6 +183,7 @@ class GetCalendarEvent(webapp2.RequestHandler):
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(obj))
 
+
 class GetListOffCalendar(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
@@ -185,10 +204,69 @@ class GetListOffCalendar(webapp2.RequestHandler):
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(obj))
 
+class Busy:
+    def __init__(self, start, end):
+        start_ = start.split('-')
+        end_ = end.split('-')
+        start_ = '-'.join(start_[0:3])
+        end_ = '-'.join(end_[0:3])
+
+        self.start = datetime.strptime(start_, '%Y-%m-%dT%H:%M:%S')
+        self.end = datetime.strptime(end_, '%Y-%m-%dT%H:%M:%S')
+
 class Schedule(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
+        # Get all google calendar events
+        now = datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
+        http = decorator.http()
+        # Call the service using the authorized Http object.
+        eventsResult = calendar_service.events().list(
+            calendarId='primary', timeMin=now).execute(http=http)
+        events = eventsResult.get('items', [])
+        # Construct a list with all busy events
+        BusyList = []
+        schedule_list = []
+        for event in events:
+            # Choose status with confirmed
+            if 'status' in event and event['status'] == 'confirmed':
+                # Do not choose all day events
+                if 'dateTime' in event['start']:
+                    b = Busy(event['start'].get('dateTime'), event['end'].get('dateTime'))
+                    BusyList.append(b)
+
         task_keys = self.request.get_all('task_key')
+        for task_key in task_keys:
+            task = ndb.Key(urlsafe = task_key).get()
+            end = task.due_date
+            start = end - timedelta(seconds = task.estimated_finish_time.hour*3600 + task.estimated_finish_time.minute*60)
+            conflict = False
+            for busy in BusyList:
+                if busy.start < start < busy.end or busy.start < end < busy.end:
+                    conflict = True
+                    break
+
+            schedule_dict = dict()
+            if conflict == True:
+                # Reschedule
+                schedule_dict['status'] = 'conflict'
+                print 'Reschedule this event!'
+            else:
+                schedule_dict['status'] = 'confirmed'
+                schedule_dict['start'] = start.isoformat()
+                schedule_dict['end'] = end.isoformat()
+
+            schedule_dict['name'] = task.name
+            schedule_dict['task_key'] = task_key
+            schedule_dict['list_key'] = task.list_key.urlsafe()
+            schedule_list.append(schedule_dict)
+
+        obj = dict()
+        obj['schedule_list'] = schedule_list
+        obj['status'] = 'Success'
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(obj))
+
 
 
 class LoadDefaultOnCalendar(webapp2.RequestHandler):
@@ -209,6 +287,7 @@ class LoadDefaultOnCalendar(webapp2.RequestHandler):
         obj['task_list'] = task_list
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(obj))
+
 
 class PutListOnCalendar(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -234,6 +313,7 @@ class PutListOnCalendar(webapp2.RequestHandler):
         list.put()
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(obj))
+
 
 class SyncGoogleCalendarToList(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -322,6 +402,7 @@ class SyncGoogleCalendarToList(webapp2.RequestHandler):
             #     else:
             #         event_dict['start'] = event['start'].get('date')
             #         event_dict['end'] = event['end'].get('date')
+
 
 class GetTasksFromList(webapp2.RequestHandler):
     @decorator.oauth_required

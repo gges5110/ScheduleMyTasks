@@ -1,84 +1,99 @@
 <!DOCTYPE html>
 {% autoescape true %}
 <html lang="en">
-  <head>
-    <title>ScheduleMyTasks</title>
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="/jquery/jquery-1.11.3.js"></script>
+    <head>
+        <title>ScheduleMyTasks</title>
+        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+        <script src="/jquery/jquery-1.11.3.js"></script>
 
-    <!-- jQuery UI -->
-    <link rel="stylesheet" href="jquery-ui/jquery-ui.min.css" />
-    <script src="./jquery-ui/jquery-ui.min.js"></script>
+        <!-- jQuery UI -->
+        <link rel="stylesheet" href="jquery-ui/jquery-ui.min.css" />
+        <script src="./jquery-ui/jquery-ui.min.js"></script>
 
-    <!-- Bootstrap -->
-    <script src="/bootstrap/js/bootstrap.min.js"></script>
-    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Bootstrap -->
+        <script src="/bootstrap/js/bootstrap.min.js"></script>
+        <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- bootstrap3-dialog -->
-    <link href="/bootstrap3-dialog/css/bootstrap-dialog.min.css" rel="stylesheet">
-    <script type="text/javascript" src="./bootstrap3-dialog/js/bootstrap-dialog.min.js"></script>
+        <!-- bootstrap3-dialog -->
+        <link href="/bootstrap3-dialog/css/bootstrap-dialog.min.css" rel="stylesheet">
+        <script type="text/javascript" src="./bootstrap3-dialog/js/bootstrap-dialog.min.js"></script>
 
-    <script type="text/javascript" src="/bower_components/moment/min/moment.min.js"></script>
-    <script type="text/javascript" src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
-    <link rel="stylesheet" href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" />
+        <script type="text/javascript" src="/bower_components/moment/min/moment.min.js"></script>
+        <script type="text/javascript" src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+        <link rel="stylesheet" href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" />
 
-    <!-- fullcalendar -->
-    <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.min.css" />
-    <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.print.css" media='print'/>
+        <!-- fullcalendar -->
+        <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.min.css" />
+        <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.print.css" media='print'/>
 
+        <!-- toastr -->
+        <link href="./toastr/toastr.css" rel="stylesheet"/>
+        <script type="text/javascript" src="./toastr/toastr.js"></script>
 
-    <!-- toastr -->
-    <link href="./toastr/toastr.css" rel="stylesheet"/>
-    <script type="text/javascript" src="./toastr/toastr.js"></script>
+        <link href="/bootstrap/css/theme.css" rel="stylesheet"/>
+    </head>
 
-    <link href="/bootstrap/css/theme.css" rel="stylesheet"/>
-  </head>
-  <body>
-    <!-- Fixed navbar -->
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="/">
-            <i class="glyphicon glyphicon-home"></i>
-            <span>ScheduleMyTasks</span>
-          </a>
+    <body>
+        <div class="wrapper">
+            <!-- Fixed navbar -->
+            <nav class="navbar navbar-inverse navbar-fixed-top">
+                <div class="container">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
 
+                        <a class="navbar-brand" href="/">
+                            <i class="glyphicon glyphicon-home"></i>
+                            <span>ScheduleMyTasks</span>
+                        </a>
+                    </div>
+
+                    <div id="navbar" class="navbar-collapse collapse">
+                        <ul class="nav navbar-nav">
+                            <li>
+                                <a href="/calendar">
+                                    <i class="glyphicon glyphicon-calendar"></i>
+                                    <span>Calendar</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/manage_lists">
+                                    <i class="glyphicon glyphicon-list-alt"></i>
+                                    <span>Lists</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div><!--/.nav-collapse -->
+                </div>
+            </nav>
+
+            <div class="container" style="padding-top: 100px;" role="main">
+
+            {% block header %}
+            {% endblock %}
+
+            {% block content %}
+            {% endblock %}
+            </div>
         </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li>
-              <a href="/calendar">
-                <i class="glyphicon glyphicon-calendar"></i>
-                <span>Calendar</span>
-              </a>
-            </li>
-            <li>
-              <a href="/manage_lists">
-                <i class="glyphicon glyphicon-list-alt"></i>
-                <span>Lists</span>
-              </a>
-            </li>
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
-    </nav>
 
-    <div class="container" style="margin-top: 2cm" role="main">
+        <footer class="footer">
+            <div class="container">
+                <p>
+                    Designed by <a href="#">Jenny Chen and Yu-Chia Wu</a>
+                </p>
+                <p>
+                    Last Updated: December 2015
+                </p>
+            </div>
+        </footer>
 
-    {% block header %}
-    {% endblock %}
-
-    {% block content %}
-    {% endblock %}
-    </div>
-    <script type="text/javascript" src="/bower_components/fullcalendar/dist/fullcalendar.min.js"></script>
-  </body>
+        <script type="text/javascript" src="/bower_components/fullcalendar/dist/fullcalendar.min.js"></script>
+    </body>
 </html>
 
 

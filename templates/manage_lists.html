@@ -22,33 +22,29 @@ span.list_name_span {
 
             <div class="panel-body">
                 <div class="row">
-
-                        <ol class='todo_list'>
-                            {% for list in lists %}
-                            <li>
-                                <span class="list_name_span">
-                                    <a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a>
-                                </span>
-                                <span class="total_seconds_span" id="{{ list.key.urlsafe() }}">
-                                    Total seconds.
-                                </span>
-                            </li>
-                            {% endfor %}
-                        </ol>
-                    </div>
-
-                <div class="row">
-                    <div>
-                        <div class="col-sm-4">
-                            <input type="text" class="form-control" id="list_name">
-                        </div>
-                        <div class="col-sm-4">
-                            <button class="btn btn-primary" type="submit" id="create_list_btn">Create List</button>
-                        </div>
-                        <div class="col-sm-4">
-                            <button class="btn btn-primary" type="submit" id="sync_list_btn">Fetch Google Calendar List</button>
-                        </div>
-                    </div>
+                    <ol class='todo_list'>
+                        {% for list in lists %}
+                        <li>
+                            <span class="list_name_span">
+                                <a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a>
+                            </span>
+                            <span class="total_seconds_span" id="{{ list.key.urlsafe() }}">
+                                Total seconds.
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+            <div class="panel-footer clearfix">
+                <div class="col-sm-4">
+                    <input type="text" class="form-control" id="list_name">
+                </div>
+                <div class="col-sm-4">
+                    <button class="btn btn-primary" type="submit" id="create_list_btn">Create List</button>
+                </div>
+                <div class="col-sm-4">
+                    <button class="btn btn-primary" type="submit" id="sync_list_btn">Fetch Google Calendar List</button>
                 </div>
             </div>
         </div>
