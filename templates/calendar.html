@@ -13,6 +13,11 @@ span.list_name_span {
   width: 100px;
 }
 
+span.task_name_span_modal {
+    display: inline-block;
+    width: 100px;
+}
+
 ol.todo_list li {
     padding: .2em 1em;
 }
@@ -30,7 +35,7 @@ div.list_container {
 
 <div class="col-sm-12">
     <div class="container">
-        <div class="panel panel-primary">
+        <div class="panel panel-default">
             <div class="panel-heading">
                 <h1>Calendar for {{ email }}</h1>
             </div>
@@ -44,7 +49,7 @@ div.list_container {
                         {% for list in lists %}
                             <li class="task_container_list">
                                 <span class="list_name_span">
-                                    <a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a>
+                                    <a href="#" data-toggle="modal" data-target="#myModal" class="list_modal" id="{{ list.key.urlsafe() }}">{{ list.name }}</a>
                                 </span>
                                 <div>
                                 {% if not list.on_calendar %}
@@ -66,11 +71,63 @@ div.list_container {
     </div>
 </div>
 
+<!-- Modal -->
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Modal Header</h4>
+        </div>
+        <div class="modal-body">
+            <ul class="list-group modal_list">
+            </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+</div>
+
 <script>
 $(function() { // document ready
-    // TODO default tasks from on_calendar lists
+    $(document).on('click', '.list_modal', function(e) {
+        var modal_list_name = $(this).text();
+        $('.modal-title').text(modal_list_name);
+        // clear the list in modal
+        $('ul.modal_list').empty();
 
-    $('.calendar_off').on('click', function(e) {
+        toastr.success('Modal opened');
+
+        var $ajax = $.getJSON('/api/get_tasks_from_list',
+            { list_key: $(this).attr('id') },
+            function(msg) {
+                console.log(msg.status);
+                $.each( msg.task_list, function(index, element) {
+                    $('ul.modal_list').append(
+                        "<li class=\"list-group-item\" id=\""
+                            + element.task_key
+                            +  "\">"
+                            + "<span class=\"task_name_span_modal\">"
+                            + element.task_name
+                            + "</span>"
+                            + "<span class=\"task_eft\">"
+                            + element.eft
+                            + "</span>"
+                            + "<span class=\"task_due_date_span\">"
+                            + element.due_date
+                            + "</span>"
+                        + "</li>"
+                    );
+                });
+
+            }
+        );
+    });
+
+    $(document).on('click', '.calendar_off', function(e) {
         var list_key = $(this).attr('id');
         toastr.success('Take the list off the calendar.');
         //TODO: send AJAX to backend to set on_calendar to False
@@ -99,10 +156,7 @@ $(function() { // document ready
         );
     });
 
-
-
-
-    $('.calendar_on').on('click', function(e) {
+    $(document).on('click', '.calendar_on', function(e) {
         var list_key = $(this).attr('id');
         toastr.success('Put list on calendar.');
         var source = function( start, end, timezone, callback ) {
@@ -174,7 +228,7 @@ $(function() { // document ready
                     );
                 }
             },
-            {
+            {   // TODO default tasks from on_calendar lists
                 events: function( start, end, timezone, callback ) {
                     var res = '';
                     {% for list in lists %}

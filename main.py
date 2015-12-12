@@ -317,6 +317,28 @@ class SyncGoogleCalendarToList(webapp2.RequestHandler):
             #         event_dict['start'] = event['start'].get('date')
             #         event_dict['end'] = event['end'].get('date')
 
+class GetTasksFromList(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+        list = ndb.Key(urlsafe = self.request.get('list_key')).get()
+        list_owner = list.user_email
+        if current_user == list_owner:
+            task_list = []
+            tasks = Task.query(Task.list_key == list.key).fetch()
+            for task in tasks:
+                task_dict = dict()
+                task_dict['task_name'] = task.name
+                task_dict['due_date'] = task.due_date.isoformat()
+                task_dict['eft'] = task.estimated_finish_time.isoformat()
+                task_dict['task_key'] = task.key.urlsafe()
+                task_list.append(task_dict)
+
+        obj = dict()
+        obj['task_list'] = task_list
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(obj))
+
 class TotalTimeForList(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
@@ -329,7 +351,6 @@ class TotalTimeForList(webapp2.RequestHandler):
             total_seconds = 0
             for task in tasks:
                 total_seconds += task.estimated_finish_time.hour * 3600 + task.estimated_finish_time.minute * 60
-
 
             hours = total_seconds // 3600
             total_seconds -= hours * 3600
@@ -409,6 +430,7 @@ app = webapp2.WSGIApplication([
     ('/api/get_calendar_event', GetCalendarEvent),
     ('/api/put_list_on_calendar', PutListOnCalendar),
     ('/api/get_list_off_calendar', GetListOffCalendar),
+    ('/api/get_tasks_from_list', GetTasksFromList),
     ('/api/load_default_on_calendar', LoadDefaultOnCalendar),
     ('/api/total_time_for_list', TotalTimeForList),
     ('/api/create_list', CreateList),

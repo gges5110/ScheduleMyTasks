@@ -52,7 +52,7 @@ div.panel-heading {
                                     </a>
                                 </span>
                                 <span class="task_eft">
-                                    {{ task.estimated_finish_time.hour }}:{{ task.estimated_finish_time.minute }}
+                                    {{ task.estimated_finish_time.isoformat()[0:5] }}
                                 </span>
                                 <span class="task_due_date_span">
                                     {{ task.due_date }}
@@ -79,18 +79,9 @@ div.panel-heading {
                             </button>
                         </div>
                         <div class="col-sm-3">
-                            <form action="/calendar">
-                                <button type="submit" class="btn btn-success" id="on_calendar">
-                                    Calendar On
-                                </button>
-                            </form>
-                        </div>
-                        <div class="col-sm-3">
-                            <form action="/calendar">
-                                <button type="submit" class="btn btn-danger" id="off_calendar">
-                                    Calendar Off
-                                </button>
-                            </form>
+                            <button class="btn btn-danger" id="sync_btn">
+                                Sync With Google Calendar
+                            </button>
                         </div>
                     </div>
                 </div>
