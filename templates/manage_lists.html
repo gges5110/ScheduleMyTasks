@@ -6,6 +6,10 @@ div.panel-body {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 20px;
 }
+span.list_name_span {
+  display: inline-block;
+  width: 200px;
+}
 
 </style>
 
@@ -21,18 +25,28 @@ div.panel-body {
 
                         <ol class='todo_list'>
                             {% for list in lists %}
-                                <li><a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a></li>
+                            <li>
+                                <span class="list_name_span">
+                                    <a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a>
+                                </span>
+                                <span class="total_seconds_span" id="{{ list.key.urlsafe() }}">
+                                    Total seconds.
+                                </span>
+                            </li>
                             {% endfor %}
                         </ol>
                     </div>
 
                 <div class="row">
                     <div>
-                        <div class="col-sm-4 col-sm-offset-4">
+                        <div class="col-sm-4">
                             <input type="text" class="form-control" id="list_name">
                         </div>
                         <div class="col-sm-4">
                             <button class="btn btn-primary" type="submit" id="create_list_btn">Create List</button>
+                        </div>
+                        <div class="col-sm-4">
+                            <button class="btn btn-primary" type="submit" id="sync_list_btn">Sync Google Calendar List</button>
                         </div>
                     </div>
                 </div>
@@ -43,6 +57,31 @@ div.panel-body {
 
 <script>
 $(document).ready(function() {
+    $.getJSON(
+        '/api/total_time_for_list',
+        function(json) {
+            var events = [];
+            $.each( json.list, function(index, element) {
+                $('.total_seconds_span#' + element.list_key).text('Total eft    ' + element.hours + ':' + element.minutes);
+            });
+        }
+    );
+
+    $(document).on('click', "#sync_list_btn",function(e) {
+        toastr.success('Sync!');
+        $.ajax({
+            type: 'GET',
+            url: 'api/sync_google_calendar_to_list',
+            success: function(msg) {
+                console.log(msg)
+                if (msg != 'Failed') {
+                    // append new list
+                    toastr.success('Sync complete!');
+                }
+            }
+        });
+    });
+
     $("#create_list_btn").on('click', function(e) {
         e.preventDefault();
         var list_name = $('#list_name').val();

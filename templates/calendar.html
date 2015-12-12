@@ -10,7 +10,7 @@ body {
 
 span.list_name_span {
   display: inline-block;
-  width: 200px;
+  width: 100px;
 }
 
 ol.todo_list li {
@@ -19,7 +19,7 @@ ol.todo_list li {
 
 div.list_container {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 20px;
+    /*font-size: 20px;*/
 }
 
 #calendar {
@@ -36,37 +36,30 @@ div.list_container {
             </div>
 
             <div class="panel-body">
-                <div id='calendar'></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="col-sm-12">
-    <div class="container list_container">
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                <h1>Lists</h1>
-            </div>
-
-            <div class="panel-body">
-                <div>
+                <div class="col-sm-9">
+                    <div id='calendar'></div>
+                </div>
+                <div class="col-sm-3">
                     <ol class='todo_list'>
                         {% for list in lists %}
                             <li class="task_container_list">
                                 <span class="list_name_span">
                                     <a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a>
                                 </span>
+                                <div>
                                 {% if not list.on_calendar %}
-                                <button class="btn btn-success calendar_on" id="{{ list.key.urlsafe() }}">Calendar On</button>
-                                <button class="btn btn-danger calendar_off" disabled id="{{ list.key.urlsafe() }}">Calendar Off</button>
+                                <button class="btn btn-success calendar_on" id="{{ list.key.urlsafe() }}">On</button>
+                                <button class="btn btn-danger calendar_off" disabled id="{{ list.key.urlsafe() }}">Off</button>
                                 {% else %}
-                                <button class="btn btn-success calendar_on" disabled id="{{ list.key.urlsafe() }}">Calendar On</button>
-                                <button class="btn btn-danger calendar_off" id="{{ list.key.urlsafe() }}">Calendar Off</button>
+                                <button class="btn btn-success calendar_on" disabled id="{{ list.key.urlsafe() }}">On</button>
+                                <button class="btn btn-danger calendar_off" id="{{ list.key.urlsafe() }}">Off</button>
                                 {% endif %}
+                                </div>
                             </li>
                         {% endfor %}
                     </ol>
+                    <button class="btn btn-primary" id="schedule_btn">Schedule</button>
+                    <button class="btn btn-warning" id="save_schedule_btn">Save</button>
                 </div>
             </div>
         </div>
@@ -189,12 +182,10 @@ $(function() { // document ready
                             res += 'list_key={{ list.key.urlsafe() }}&';
                         {% endif%}
                     {% endfor %}
-                    toastr.success('Send AJAX');
                     var $ajax = $.getJSON(
                         '/api/load_default_on_calendar',
                         res,
                         function(event) {
-                            toastr.success('Got default events');
                             var events = [];
                             $.each( event.task_list, function(index, element) {
                                 events.push({

@@ -7,6 +7,11 @@ span.task_name_span {
   width: 200px;
 }
 
+span.task_eft {
+    display: inline-block;
+    width: 100px;
+}
+
 div.panel-body {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 20px;
@@ -45,6 +50,9 @@ div.panel-heading {
                                     <a href="#" class="edit_task_opener">
                                       {{ task.name }}
                                     </a>
+                                </span>
+                                <span class="task_eft">
+                                    {{ task.estimated_finish_time.hour }}:{{ task.estimated_finish_time.minute }}
                                 </span>
                                 <span class="task_due_date_span">
                                     {{ task.due_date }}
@@ -95,25 +103,64 @@ div.panel-heading {
 $(document).ready(function() {
     var create_dialog, edit_dialog, list_name, list_key;
     create_dialog = $( "#create_item" ).dialog({
-        autoOpen: false
+        autoOpen: false,
+        width: 400,
+        height: 450
     });
 
     edit_dialog = $('#edit_task').dialog({
-      autoOpen: false
+      autoOpen: false,
+      width: 400,
+      height: 450
     });
 
     list_name = '{{ list.name }}';
     list_key = '{{ list.key.urlsafe() }}';
+    var task_id;
 
-    $( '.task_name_span' ).on('click', '.edit_task_opener', function(event) {
+    $(document).on('click', '.edit_task_opener', function(event) {
         toastr.warning('Edit task.');
         edit_dialog.dialog('open');
         var task_name = $(this).text();
-        console.log(task_name);
+        // console.log(task_name);
         $('#task_name_edit').val($.trim(task_name));
+        task_id = $(this).closest('li.list-group-item').attr('id');
 
         var task_due_date = $(this).closest('li.list-group-item').children('.task_due_date_span').text();
         $('#due_date_edit').val($.trim(task_due_date));
+    });
+
+    $(document).on('click', '#edit_task_btn', function(e) {
+        toastr.success('Editing!');
+        var task_name = $('#task_name_edit').val();
+        var due_date = $('#due_date_edit').val();
+        var date_obj = new Date(due_date);
+        var eft = $('#eft_edit').val();
+        if(task_name === "") {
+            toastr.warning('Task name must be filled!');
+        }
+        else if(due_date === "") {
+            toastr.warning('Due date must be filled!');
+        }
+        else if(eft === "") {
+            toastr.warning('Estimated finish time must be filled!');
+        }
+        else {
+            var res = 'task_key=' + task_id;
+            res += '&task_name=' + task_name;
+            res += '&due_date=' + date_obj.toISOString();
+            res += '&eft=' + eft;
+
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: 'api/edit_task',
+                data: res,
+                success: function(msg) {
+                    toastr.success('Edit success!');
+                }
+            });
+        }
     });
 
 
@@ -126,8 +173,14 @@ $(document).ready(function() {
         var task_name = $('#task_name').val();
         var eft = $('#eft').val();
         var due_date = $('#due_date').val();
-        if(task_name === "" || eft === "" || due_date === "") {
-            toastr.warning('Every field must be filled!');
+        if(task_name === "") {
+            toastr.warning('Task name must be filled!');
+        }
+        else if(due_date === "") {
+            toastr.warning('Due date must be filled!');
+        }
+        else if(eft === "") {
+            toastr.warning('Estimated finish time must be filled!');
         }
         else {
             var res = 'list_key=' + list_key;
@@ -184,7 +237,8 @@ $(document).ready(function() {
 </script>
 
 <div id='edit_task' title='Edit Task'>
-    <div>Task Name
+    <div>
+        Task Name
         <input type="text" class="form-control" id="task_name_edit">
     </div>
 
@@ -194,8 +248,8 @@ $(document).ready(function() {
         </div>
     </div>
 
-    <div>
-        <div class="col-sm-12">
+    <div class="row">
+        <div class="col-sm-8">
             <div class="form-group">
                 <div class="input-group date" id="datetimepicker2">
                     <input type="text" class="form-control" id="due_date_edit"/>
@@ -209,6 +263,18 @@ $(document).ready(function() {
                     });
                 </script>
             </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-8">
+            Estimated Finish Time
+            <!-- <input type="text" class="form-control" id="eft"> -->
+            <select id="eft_edit">
+            {% for option in eft_choices %}
+                <option value={{ option }} selected>{{ option }}</option>
+            {% endfor %}
+            </select>
         </div>
     </div>
 
@@ -234,7 +300,7 @@ $(document).ready(function() {
     </div>
 
     <div>
-        <div class="col-sm-12">
+        <div class="col-sm-8">
             <div class="form-group">
                 <div class="input-group date" id="datetimepicker1">
                     <input type="text" class="form-control" id="due_date"/>
