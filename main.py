@@ -185,6 +185,12 @@ class GetListOffCalendar(webapp2.RequestHandler):
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(obj))
 
+class Schedule(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        task_keys = self.request.get_all('task_key')
+
+
 class LoadDefaultOnCalendar(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
@@ -433,6 +439,7 @@ app = webapp2.WSGIApplication([
     ('/api/get_tasks_from_list', GetTasksFromList),
     ('/api/load_default_on_calendar', LoadDefaultOnCalendar),
     ('/api/total_time_for_list', TotalTimeForList),
+    ('/api/schedule', Schedule),
     ('/api/create_list', CreateList),
     ('/api/create_task', CreateTask),
     ('/api/edit_task', EditTask),

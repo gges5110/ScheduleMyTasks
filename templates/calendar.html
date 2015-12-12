@@ -18,6 +18,12 @@ span.task_name_span_modal {
     width: 100px;
 }
 
+span.task_eft_modal {
+    display: inline-block;
+    width: 100px;
+}
+
+
 ol.todo_list li {
     padding: .2em 1em;
 }
@@ -85,7 +91,7 @@ div.list_container {
             </ul>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-default modal_close" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
@@ -93,38 +99,77 @@ div.list_container {
 
 <script>
 $(function() { // document ready
+    var tasks_to_schedule = [];
+
+    $(document).on('click', '#schedule_btn', function(e) {
+        toastr.success('Schedule!');
+    });
+
     $(document).on('click', '.list_modal', function(e) {
         var modal_list_name = $(this).text();
         $('.modal-title').text(modal_list_name);
         // clear the list in modal
         $('ul.modal_list').empty();
 
-        toastr.success('Modal opened');
-
         var $ajax = $.getJSON('/api/get_tasks_from_list',
             { list_key: $(this).attr('id') },
             function(msg) {
-                console.log(msg.status);
                 $.each( msg.task_list, function(index, element) {
                     $('ul.modal_list').append(
-                        "<li class=\"list-group-item\" id=\""
-                            + element.task_key
-                            +  "\">"
+                        "<li class=\"list-group-item modal_list_item\" id=\""
+                            + "\">"
                             + "<span class=\"task_name_span_modal\">"
                             + element.task_name
                             + "</span>"
-                            + "<span class=\"task_eft\">"
+                            + "<span class=\"task_eft_modal\">"
                             + element.eft
                             + "</span>"
                             + "<span class=\"task_due_date_span\">"
                             + element.due_date
                             + "</span>"
+                            + "<label class=\"checkbox-inline\" for=\""
+                            + index
+                            + "\"><input type=\"checkbox\" id=\""
+                            + element.task_key
+                            + "\"></label>"
                         + "</li>"
                     );
                 });
 
+                $('.list-group-item .checkbox-inline input[type="checkbox"]').each(
+                    function() {
+                        var task_key = $(this).attr('id');
+                        var index_in_array = $.inArray(task_key, tasks_to_schedule);
+                        if(index_in_array != -1){
+                            $(this).prop('checked', true);
+                        }
+                    }
+                );
+                // $('.btn-group input[type="checkbox"]')
             }
         );
+    });
+
+    // TODO: On closing the modal dialog, push all tasks that have been checked.
+    $(document).on('click', '.modal_close', function(e) {
+        $(".list-group-item .checkbox-inline input:checked").each(
+            function() {
+                var task_key = $(this).attr('id');
+                var index_in_array = $.inArray(task_key, tasks_to_schedule);
+                if(index_in_array == -1){
+                    tasks_to_schedule.push(task_key);
+                }
+            }
+        );
+        $(".list-group-item .checkbox-inline input:checkbox:not(:checked)").each(
+            function() {
+                var task_key = $(this).attr('id');
+                var index_in_array = $.inArray(task_key, tasks_to_schedule);
+                if( index_in_array!= -1){
+                    tasks_to_schedule.splice(index_in_array, 1);
+                }
+            }
+        )
     });
 
     $(document).on('click', '.calendar_off', function(e) {
