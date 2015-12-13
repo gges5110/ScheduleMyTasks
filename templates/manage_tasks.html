@@ -47,18 +47,18 @@ div.panel-heading {
                         {% for task in tasks %}
                             <li class="list-group-item" id="{{ task.key.urlsafe() }}">
                                 <span class="task_name_span">
-                                    <a href="#" class="edit_task_opener">
+                                    <a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
                                       {{ task.name }}
                                     </a>
                                 </span>
-                                <span class="task_eft">
+                                <span class="task_eft_span">
                                     {{ task.estimated_finish_time.isoformat()[0:5] }}
                                 </span>
                                 <span class="task_due_date_span">
-                                    {{ task.due_date }}
+                                    {{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }}
                                 </span>
-                                <a href="#" data-toggle="modal" data-target="#myModal" class="list_modal" id="{{ list.key.urlsafe() }}">
-                                    <i class="glyphicon glyphicon-remove delete_task"></i>
+                                <a href="#" data-toggle="modal" data-target="#delete_task_modal" class="list_modal delete_task" id="{{ task.key.urlsafe() }}">
+                                    <i class="glyphicon glyphicon-remove"></i>
                                 </a>
                             </li>
                         {% endfor %}
@@ -75,8 +75,8 @@ div.panel-heading {
 
             <div class="panel-footer clearfix">
                 <div class="col-sm-3">
-                    <button class="btn btn-primary create_task_opener">
-                        Create tasks
+                    <button data-toggle="modal" data-target="#create_task_modal" class="btn btn-primary create_task">
+                        Create Task
                     </button>
                 </div>
                 <div class="col-sm-3">
@@ -95,74 +95,42 @@ div.panel-heading {
 $(document).ready(function() {
 
     var create_dialog, edit_dialog, list_name, list_key;
-    create_dialog = $( "#create_item" ).dialog({
-        autoOpen: false,
-        width: 400,
-        height: 450
-    });
-
-    edit_dialog = $('#edit_task').dialog({
-      autoOpen: false,
-      width: 400,
-      height: 450
-    });
 
     list_name = '{{ list.name }}';
     list_key = '{{ list.key.urlsafe() }}';
     var task_id;
 
-    $(document).on('click', '.edit_task_opener', function(event) {
-        toastr.warning('Edit task.');
-        edit_dialog.dialog('open');
+    $(document).on('click', '.edit_task', function(event) {
+        //toastr.warning('Edit task.');
+        //edit_dialog.dialog('open');
         var task_name = $(this).text();
         // console.log(task_name);
-        $('#task_name_edit').val($.trim(task_name));
+        $('#task_name').val($.trim(task_name));
         task_id = $(this).closest('li.list-group-item').attr('id');
 
         var task_due_date = $(this).closest('li.list-group-item').children('.task_due_date_span').text();
-        $('#due_date_edit').val($.trim(task_due_date));
+        $('#due_date').val($.trim(task_due_date));
+
+        var task_eft = $(this).closest('li.list-group-item').children('.task_eft_span').text();
+        $('#eft').val($.trim(task_eft));
+
+        $('.create_task_title').text('Edit Task');
+        $('.modal_button_create_task').text('Save');
     });
 
-    $(document).on('click', '#edit_task_btn', function(e) {
-        toastr.success('Editing!');
-        var task_name = $('#task_name_edit').val();
-        var due_date = $('#due_date_edit').val();
-        var date_obj = new Date(due_date);
-        var eft = $('#eft_edit').val();
-        if(task_name === "") {
-            toastr.warning('Task name must be filled!');
-        }
-        else if(due_date === "") {
-            toastr.warning('Due date must be filled!');
-        }
-        else if(eft === "") {
-            toastr.warning('Estimated finish time must be filled!');
-        }
-        else {
-            var res = 'task_key=' + task_id;
-            res += '&task_name=' + task_name;
-            res += '&due_date=' + date_obj.toISOString();
-            res += '&eft=' + eft;
+    $(document).on('click', '.create_task', function(event) {
+        $('.create_task_title').text('Create Task');
+        $('.modal_button_create_task').text('Create');
 
-            event.preventDefault();
-            $.ajax({
-                type: 'POST',
-                url: 'api/edit_task',
-                data: res,
-                success: function(msg) {
-                    toastr.success('Edit success!');
-                }
-            });
-        }
+        $('#task_name').val('');
+        $('#due_date').val('');
+        $('#eft').val('');
+        
+        task_id = '';
     });
 
 
-
-    $( ".create_task_opener" ).click(function() {
-        create_dialog.dialog( "open" );
-    });
-
-    $('#create_task_btn').on('click', function(e) {
+    $(document).on('click', '.modal_button_create_task', function(e) {
         var task_name = $('#task_name').val();
         var eft = $('#eft').val();
         var due_date = $('#due_date').val();
@@ -180,6 +148,7 @@ $(document).ready(function() {
             res += '&task_name=' + task_name;
             res += '&due_date=' + due_date;
             res += '&eft=' + eft;
+            res += '&task_key=' + task_id;
 
             event.preventDefault();
             $.ajax({
@@ -190,25 +159,41 @@ $(document).ready(function() {
             });
 
             function appendTask(msg) {
-              create_dialog.dialog( "close" );
-              if (msg != 'Failed') {
+              if (msg == 'Edited'){
+                  $('#'+task_id).children('.task_name_span').children('.edit_task').text(task_name);
+                  $('#'+task_id).children('.task_eft_span').text(eft);
+                  $('#'+task_id).children('.task_due_date_span').text(due_date);
+                  toastr.success('Task edited');
+              }
+              else if (msg != 'Failed') {
                   // append new task
-                  toastr.success(name + 'Task created!');
+                  toastr.success('Task created!');
                     // TODO add new task
-                  $("ul.list-group").append("<li class=\"list-group-item\" id=\"" +
-                      msg +
-                      "\">" +
-                      task_name +
-                      "<a href=\"#\">" +
-                      "<i class=\"glyphicon glyphicon-remove delete_task\"></i>" +
-                      "</a></li>");
+                  $("ul.list-group").append(
+                        "<li class=\"list-group-item\" id=\"" + msg +"\">" +
+                            "<span class=\"task_name_span\">" + 
+                                "<a href=\"#\" data-toggle=\"modal\" data-target=\"#create_task_modal\" class=\"list_modal edit_task\">" +
+                                    task_name +
+                                "<\/a>" +
+                            "<\/span>" +
+                            "<span class=\"task_eft_span\">" + 
+                                eft + 
+                            "<\/span>" + 
+                            "<span class=\"task_due_date_span\">" +
+                                due_date +
+                            "<\/span>" +
+                            "<a href=\"#\" data-toggle=\"modal\" data-target=\"#delete_task_modal\" class=\"list_modal delete_task\" id=\"" + msg + "\">" +
+                                "<i class=\"glyphicon glyphicon-remove\"><\/i>" +
+                            "<\/a>" +
+                        "<\/li>"
+                    );
               }
             }
         }
     });
 
-    $(document).on('click', '.modal_button', function(event) {
-        var task_key = $(this).closest('.list-group-item').attr('id');
+    $(document).on('click', '.modal_button_delete_task', function(event) {
+        var task_key = $('#delete_task_id').val();
         var res = 'task_key=' + task_key;
         // toastr.success('Task deleting!');
         event.preventDefault();
@@ -219,142 +204,100 @@ $(document).ready(function() {
             success: function(msg) {
                 console.log(msg)
                 if (msg === 'Success') {
-                    // append new task
-                    var task_li = $('li.list-group-item#' + task_key);
+                    var task_li = $('#' + task_key).closest('.list-group-item');
                     task_li.remove();
                     toastr.success('Task deleted!');
                 }
             }
         });
     });
+
+    $(document).on('click', '.delete_task', function(event) {
+        var task_key = $(this).attr('id');
+        var task_name = $(this).closest('.list-group-item').children('.task_name_span').children('.edit_task').text();
+        $('#delete_task_title').text('Deleting "' + task_name + '"'); 
+        $('#delete_task_id').val(task_key);
+    });
 });
 </script>
 
-<!-- Modal -->
-<div class="modal fade" id="myModal" role="dialog">
+<!-- Modal Delete -->
+<div class="modal fade" id="delete_task_modal" role="dialog">
     <div class="modal-dialog">
       <!-- Modal content-->
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h4 class="modal-title">Modal Header</h4>
+          <h4 class="modal-title" id="delete_task_title">Modal Header</h4>
         </div>
         <div class="modal-body">
-            Panel body
+            Are you sure you want to delete?
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default modal_button" data-dismiss="modal">Close</button>
+          <input type="hidden" id="delete_task_id">
+          <button type="button" class="btn btn-default modal_button_delete_task" data-dismiss="modal">Delete</button>
         </div>
       </div>
     </div>
 </div>
 
-<div id='edit_task' title='Edit Task'>
-    <div>
-        Task Name
-        <input type="text" class="form-control" id="task_name_edit">
-    </div>
 
-    <div class="row">
-        <div class="col-sm-12">
-            Due Date
+<!-- Modal Create -->
+<div class="modal fade" id="create_task_modal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title create_task_title">Create Task</h4>
         </div>
-    </div>
+        <div class="modal-body">
+            <div>Task Name
+                <input type="text" class="form-control" id="task_name">
+            </div>
 
-    <div class="row">
-        <div class="col-sm-8">
-            <div class="form-group">
-                <div class="input-group date" id="datetimepicker2">
-                    <input type="text" class="form-control" id="due_date_edit"/>
-                    <span class="input-group-addon">
-                        <span class="glyphicon glyphicon-calendar"></span>
-                    </span>
+            <div class="row">
+                <div class="col-sm-12">
+                    Due Date
                 </div>
-                <script type="text/javascript">
-                    $(function () {
-                        $('#datetimepicker2').datetimepicker();
-                    });
-                </script>
+            </div>
+
+            <div>
+                <div class="col-sm-8">
+                    <div class="form-group">
+                        <div class="input-group date" id="datetimepicker1">
+                            <input type="text" class="form-control" id="due_date"/>
+                            <span class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </span>
+                        </div>
+                        <script type="text/javascript">
+                            $(function () {
+                                $('#datetimepicker1').datetimepicker();
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-8">
+                    Estimated Finish Time
+                    <!-- <input type="text" class="form-control" id="eft"> -->
+                    <select id="eft">
+                    {% for option in eft_choices %}
+                        <option value={{ option }} {% if loop.first %} selected {% endif %}>{{ option }}</option>
+                    {% endfor %}
+                    </select>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div class="row">
-        <div class="col-sm-8">
-            Estimated Finish Time
-            <!-- <input type="text" class="form-control" id="eft"> -->
-            <select id="eft_edit">
-            {% for option in eft_choices %}
-                {% if loop.first %}
-                <option value={{ option }} selected>{{ option }}</option>
-                {% else %}
-                <option value={{ option }}>{{ option }}</option>
-                {% endif %}
-            {% endfor %}
-            </select>
+        <div class="modal-footer">
+          <input type="hidden" id="delete_task_id">
+          <button type="button" class="btn btn-default modal_button_create_task" data-dismiss="modal">Create</button>
         </div>
-    </div>
-
-    <div class="row">
-        <div class="col-sm-8">
-            <button class="btn btn-primary" id="edit_task_btn">
-                Edit
-            </button>
-        </div>
+      </div>
     </div>
 </div>
-
-
-<div id="create_item" title="Create New Task">
-    <div>Task Name
-        <input type="text" class="form-control" id="task_name">
-    </div>
-
-    <div class="row">
-        <div class="col-sm-12">
-            Due Date
-        </div>
-    </div>
-
-    <div>
-        <div class="col-sm-8">
-            <div class="form-group">
-                <div class="input-group date" id="datetimepicker1">
-                    <input type="text" class="form-control" id="due_date"/>
-                    <span class="input-group-addon">
-                        <span class="glyphicon glyphicon-calendar"></span>
-                    </span>
-                </div>
-                <script type="text/javascript">
-                    $(function () {
-                        $('#datetimepicker1').datetimepicker();
-                    });
-                </script>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-sm-8">
-            Estimated Finish Time
-            <!-- <input type="text" class="form-control" id="eft"> -->
-            <select id="eft">
-            {% for option in eft_choices %}
-                <option value={{ option }} selected>{{ option }}</option>
-            {% endfor %}
-            </select>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-sm-8">
-            <button class="btn btn-primary" id="create_task_btn">
-                Create
-            </button>
-        <div class="col-sm-8">
-    </div>
-</div>
-
-
 
 {% endblock %}

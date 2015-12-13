@@ -475,15 +475,27 @@ class CreateTask(webapp2.RequestHandler):
     def post(self):
         current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
         list_owner = ndb.Key(urlsafe = self.request.get('list_key')).get().user_email
+
         if current_user == list_owner:
-            new_task = Task()
-            new_task.list_key = ndb.Key(urlsafe = self.request.get('list_key')).get().key
-            new_task.name = self.request.get('task_name')
-            new_task.due_date = datetime.strptime(self.request.get('due_date'), "%m/%d/%Y %I:%M %p")
-            new_task.estimated_finish_time = datetime.strptime(self.request.get('eft'), "%H:%M").time()
-            new_task.put()
-            self.response.headers['Content-Type'] = 'text/plain'
-            self.response.write(new_task.key.urlsafe())
+            if self.request.get('task_key'):
+                task_key = ndb.Key(urlsafe = self.request.get('task_key'))
+                task = task_key.get()
+                task.name = self.request.get('task_name')
+                #task.due_date = datetime.strptime(self.request.get('due_date'), '%Y-%m-%dT%H:%M:%S.%fZ')
+                task.due_date = datetime.strptime(self.request.get('due_date'), "%m/%d/%Y %I:%M %p")
+                task.estimated_finish_time = datetime.strptime(self.request.get('eft'), "%H:%M").time()
+                task.put()
+                self.response.headers['Content-Type'] = 'text/plain'
+                self.response.write('Edited')
+            else:
+                new_task = Task()
+                new_task.list_key = ndb.Key(urlsafe = self.request.get('list_key')).get().key
+                new_task.name = self.request.get('task_name')
+                new_task.due_date = datetime.strptime(self.request.get('due_date'), "%m/%d/%Y %I:%M %p")
+                new_task.estimated_finish_time = datetime.strptime(self.request.get('eft'), "%H:%M").time()
+                new_task.put()
+                self.response.headers['Content-Type'] = 'text/plain'
+                self.response.write(new_task.key.urlsafe())
         else:
             self.response.headers['Content-Type'] = 'text/plain'
             self.response.write('Failed')
