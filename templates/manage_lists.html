@@ -33,16 +33,16 @@ span.list_name_span {
                     </thead>
                     <tbody>
                         {% for list in lists %}
-
                         <tr class="list_table" id="{{ list.key.urlsafe() }}">
                             <td>{{ loop.index }}</td>
                             <td><a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a></td>
-                            <td class="total_seconds_tr" id="{{ list.key.urlsafe() }}">Total seconds.</td>
+                            <td class="next_item_span" id="{{ list.key.urlsafe() }}"></td>
                             <td><a href="#"></a></td>
                         <tr>
                         {% endfor%}
                     </tbody>
                 </table>
+
             </div>
             <div class="panel-footer clearfix">
                 <div class="col-sm-4">
@@ -62,11 +62,11 @@ span.list_name_span {
 <script>
 $(document).ready(function() {
     $.getJSON(
-        '/api/total_time_for_list',
+        '/api/next_item_in_list',
         function(json) {
             var events = [];
             $.each( json.list, function(index, element) {
-                $('.total_seconds_tr#' + element.list_key).text('Total eft    ' + element.hours + ':' + element.minutes);
+                $('.next_item_span#' + element.list_key).text('Next item due: \"' + element.task_name + '\" on ' + element.due_date);
             });
         }
     );

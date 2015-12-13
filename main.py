@@ -119,7 +119,7 @@ class ManageTasks(webapp2.RequestHandler):
             eft_choices.append(start_time.strftime("%H:%M"))
 
         list_key = ndb.Key(urlsafe = self.request.get('list_key'))
-        tasks = Task.query(Task.list_key == list_key)
+        tasks = Task.query(Task.list_key == list_key).order(Task.due_date)
         template = JINJA_ENVIRONMENT.get_template('/templates/manage_tasks.html')
         template_values = {
             'list' : list_key.get(),
@@ -321,7 +321,7 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
     @decorator.oauth_required
     def post(self):
         print self.request.get_all('task_key')
-        
+
 
 
 
@@ -436,6 +436,26 @@ class GetTasksFromList(webapp2.RequestHandler):
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(obj))
 
+class NextItemInList(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        lists = List.query().fetch()
+        next_item_list = []
+        for list in lists:
+            next_item_dict = dict()
+            tasks = Task.query(Task.list_key == list.key).order(Task.due_date).fetch(1)
+            if tasks:
+                next_item_dict['list_key'] = list.key.urlsafe()
+                next_item_dict['task_name'] = tasks[0].name
+                next_item_dict['due_date'] = tasks[0].due_date.strftime('%m/%d/%Y %I:%M %p')
+                next_item_list.append(next_item_dict)
+
+        obj = dict()
+        obj['list'] = next_item_list
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(obj))
+
+
 class TotalTimeForList(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
@@ -543,6 +563,7 @@ app = webapp2.WSGIApplication([
     ('/api/load_default_on_calendar', LoadDefaultOnCalendar),
     ('/api/total_time_for_list', TotalTimeForList),
     ('/api/save_to_google_calendar', SaveToGoogleCalendar),
+    ('/api/next_item_in_list', NextItemInList),
     ('/api/schedule', Schedule),
     ('/api/create_list', CreateList),
     ('/api/create_task', CreateTask),
