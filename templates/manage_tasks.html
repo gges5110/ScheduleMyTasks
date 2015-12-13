@@ -97,6 +97,26 @@ div.panel-heading {
 
 <script>
 $(document).ready(function() {
+    {
+        $("#manage_table").tablesorter({
+            // this will apply the bootstrap theme if "uitheme" widget is included
+            // the widgetOptions.uitheme is no longer required to be set
+            theme : "bootstrap",
+
+            widthFixed: true,
+        
+            headerTemplate : '{content} {icon}', // new in v2.7. Needed to add the bootstrap icon!
+            headers : {
+                0 : { sorter : false },
+                4 : { sorter : false }
+            },
+            sortList: [[2,0]],
+            
+            widgets : [ "uitheme"]
+
+        });
+        
+    }
     NProgress.done(true);
 
     var create_dialog, edit_dialog, list_name, list_key;
@@ -206,10 +226,9 @@ $(document).ready(function() {
               else if (msg != 'Failed') {
                   // append new task
                   toastr.success('Task created!');
-                    // TODO add new task
                   var strVar="";
                   strVar += "<tr class=\"tasks_table\" id=\"" + msg + "\">";
-    			  strVar += "<td class=\"task_done_column\"><input type=checkbox><\/td>";
+    			  strVar += "<td class=\"task_done_column\"><input type=checkbox id=\"task_done_checkbox\"><\/td>";
                   strVar += "   <td class=\"task_name_column\"><a href=\"#\" data-toggle=\"modal\" data-target=\"#create_task_modal\" class=\"list_modal edit_task\">";
                   strVar += "   " + task_name + "<\/a><\/td>";
                   strVar += "	<td class=\"task_due_date_column\">" + due_date + "<\/td>";
@@ -219,7 +238,7 @@ $(document).ready(function() {
                   strVar += "   <\/a><\/td>";
                   strVar += "<\/tr>";
 
-                  $(".tasks_table_body").append(strVar);
+                  $(".tasks_table_body").append(strVar).trigger('addRows', [strVar, true]);
                   if(document.getElementById('manage_table').rows.length == 2){
                     //console.log("removing empty list tile");
                     $('.empty_list_tile').children('.jumbotron').remove();
