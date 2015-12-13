@@ -89,6 +89,7 @@ $(document).ready(function() {
             toastr.warning('List name cannot be empty!');
         }
         else{
+            toastr.info("Creating list...");
             var res = "list_name=" + list_name;
             //toastr.warning('Creating list: ' + list_name);
             $.ajax({
