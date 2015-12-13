@@ -53,8 +53,8 @@ div.panel-heading {
     					<tbody class="tasks_table_body">
     						{% for task in tasks %}
 
-    						<tr class="tasks_table" id="{{ task.key.urlsafe() }}">
-    							<td class="task_done_column"><input type=checkbox></td>
+    						<tr class="tasks_table {% if task.done %}active{% endif %}" id="{{ task.key.urlsafe() }}">
+    							<td class="task_done_column"><input type=checkbox id="task_done_checkbox" {% if task.done %}checked{% endif %}></td>
     							<td class="task_name_column"><a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
                                 {{ task.name }}</a></td>
     							<td class="task_due_date_column">{{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }}</td>
@@ -105,12 +105,35 @@ $(document).ready(function() {
     list_key = '{{ list.key.urlsafe() }}';
     var task_id;
 
-    $(document).on('click', '.task_done_column', function(event){
-        if($(this).children().is(":checked")) {
+    $(document).on('click', '#task_done_checkbox', function(event){
+        var done;
+        var done_task_id = $(this).closest('tr.tasks_table').attr('id');
+        console.log("clicked");
+        $(this).attr("checked", !$(this).attr("checked"));
+        if($(this).attr("checked")) {
+            console.log("check");
             $(this).closest('.tasks_table').addClass('active');
+            done = 'checked';
         }
         else{
+            console.log("uncheck");
             $(this).closest('.tasks_table').removeClass('active');
+            done = 'notchecked';
+        }
+        var res = 'task_key=' + done_task_id;
+        res += '&done=' + done;
+
+        $.ajax({
+            type: 'POST',
+            url: 'api/edit_task_done',
+            data: res,
+            success: doneTask
+        });
+
+        function doneTask(msg) {
+          if (msg != 'Success'){
+            toastr.error("Error!");
+          }
         }
 
     });

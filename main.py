@@ -53,6 +53,7 @@ class Task(ndb.Model):
     due_date = ndb.DateTimeProperty()
     event_ID = ndb.StringProperty(repeated = True)
     list_key = ndb.KeyProperty(kind = List)
+    done = ndb.BooleanProperty(default = False)
 
 
 decorator = OAuth2DecoratorFromClientSecrets(
@@ -630,16 +631,22 @@ class CreateTask(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/plain'
             self.response.write('Failed')
 
-class EditTask(webapp2.RequestHandler):
+class EditTaskDone(webapp2.RequestHandler):
     @decorator.oauth_required
     def post(self):
-        task_key = ndb.Key(urlsafe = self.request.get('task_key'))
-        task = task_key.get()
-        task.name = self.request.get('task_name')
-        task.due_date = datetime.strptime(self.request.get('due_date'), '%Y-%m-%dT%H:%M:%S.%fZ')
-        # task.due_date = datetime.strptime(self.request.get('due_date'), "%m/%d/%Y %I:%M %p")
-        task.estimated_finish_time = datetime.strptime(self.request.get('eft'), "%H:%M").time()
-        task.put()
+        if self.request.get('task_key'):
+            task_key = ndb.Key(urlsafe = self.request.get('task_key'))
+            task = task_key.get()
+            if self.request.get('done') == 'checked':
+                task.done = True
+            else:
+                task.done = False
+            task.put()
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Success')
+        else:
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Failed')
 
 
 class DeleteTask(webapp2.RequestHandler):
@@ -672,7 +679,7 @@ app = webapp2.WSGIApplication([
     ('/api/create_list', CreateList),
     ('/api/delete_list', DeleteList),
     ('/api/create_task', CreateTask),
-    ('/api/edit_task', EditTask),
+    ('/api/edit_task_done', EditTaskDone),
     ('/api/delete_task', DeleteTask),
     (decorator.callback_path, decorator.callback_handler())
 ], debug=True)
