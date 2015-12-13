@@ -440,7 +440,12 @@ $(document).ready(function() {
                         </div>
                         <script type="text/javascript">
                             $(function () {
-                                $('#datetimepicker1').datetimepicker();
+                                var now = new Date();
+                                now.setHours(23);
+                                now.setMinutes(59);
+                                $('#datetimepicker1').datetimepicker({
+                                    defaultDate : now
+                                });
                             });
                         </script>
                     </div>
