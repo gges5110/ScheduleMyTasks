@@ -28,6 +28,7 @@ from datetime import datetime, date, time, timedelta
 
 from google.appengine.ext import ndb
 from google.appengine.api import users, memcache
+from google.net.proto.ProtocolBuffer import ProtocolBufferDecodeError
 from apiclient.discovery import build
 from oauth2client.appengine import OAuth2DecoratorFromClientSecrets
 
@@ -121,16 +122,19 @@ class ManageTasks(webapp2.RequestHandler):
             start_time = start_time + timedelta(minutes = 30)
             eft_choices.append(start_time.strftime("%H:%M"))
 
-        list_key = ndb.Key(urlsafe = self.request.get('list_key'))
-        tasks = Task.query(Task.list_key == list_key).order(Task.due_date)
-        template = JINJA_ENVIRONMENT.get_template('/templates/manage_tasks.html')
-        template_values = {
-            'list' : list_key.get(),
-            'tasks': tasks.fetch(),
-            'eft_choices' : eft_choices
-        }
-        self.response.write(template.render(template_values))
-
+        try:
+            list_key = ndb.Key(urlsafe = self.request.get('list_key'))
+            tasks = Task.query(Task.list_key == list_key).order(Task.due_date)
+            template = JINJA_ENVIRONMENT.get_template('/templates/manage_tasks.html')
+            template_values = {
+                'list' : list_key.get(),
+                'tasks': tasks.fetch(),
+                'eft_choices' : eft_choices
+            }
+            self.response.write(template.render(template_values))
+        except (ProtocolBufferDecodeError, TypeError) as e:
+            template = JINJA_ENVIRONMENT.get_template('/templates/error.html')
+            self.response.write(template.render({}))
 
 class ManageLists(webapp2.RequestHandler):
     @decorator.oauth_required
