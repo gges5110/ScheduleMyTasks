@@ -105,6 +105,16 @@ $(document).ready(function() {
     list_key = '{{ list.key.urlsafe() }}';
     var task_id;
 
+    $(document).on('click', '.task_done_column', function(event){
+        if($(this).children().is(":checked")) {
+            $(this).closest('.tasks_table').addClass('active');
+        }
+        else{
+            $(this).closest('.tasks_table').removeClass('active');
+        }
+
+    });
+
     $(document).on('click', '.edit_task', function(event) {
         //toastr.warning('Edit task.');
         //edit_dialog.dialog('open');
