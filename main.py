@@ -443,7 +443,7 @@ class NextItemInList(webapp2.RequestHandler):
         next_item_list = []
         for list in lists:
             next_item_dict = dict()
-            tasks = Task.query(Task.list_key == list.key).order(Task.due_date).fetch(1)
+            tasks = Task.query(ndb.AND(Task.list_key == list.key, Task.due_date > datetime.now())).order(Task.due_date).fetch(1)
             if tasks:
                 next_item_dict['list_key'] = list.key.urlsafe()
                 next_item_dict['task_name'] = tasks[0].name

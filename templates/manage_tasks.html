@@ -43,6 +43,7 @@ div.panel-heading {
                     <table class="table" id="manage_table">
     					<thead>
     						<tr>
+    							<th>Done</th>
     							<th>Name</th>
     							<th>Due Date</th>
     							<th>Remain</th>
@@ -53,6 +54,7 @@ div.panel-heading {
     						{% for task in tasks %}
 
     						<tr class="tasks_table" id="{{ task.key.urlsafe() }}">
+    							<td class="task_done_column"><input type=checkbox></td>
     							<td class="task_name_column"><a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
                                 {{ task.name }}</a></td>
     							<td class="task_due_date_column">{{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }}</td>
@@ -60,18 +62,18 @@ div.panel-heading {
     							<td><a href="#" data-toggle="modal" data-target="#delete_task_modal" class="list_modal delete_task" id="{{ task.key.urlsafe() }}">
                                     <i class="glyphicon glyphicon-remove"></i>
                                 </a></td>
-    						<tr>
+    						</tr>
 
     						{% endfor%}
     					</tbody>
     				</table>
-                    {% if not tasks %}
                         <div class="empty_list_tile">
+                    {% if not tasks %}
                             <div class="jumbotron text-center">
-                                <h2>The list is empty</h2>
+                                <h2 class="emtpy_list_title">The list is empty</h2>
                             </div>
-                        </div>
                     {% endif %}
+                        </div>
                 </div>
             </div>
 
@@ -174,6 +176,7 @@ $(document).ready(function() {
                     // TODO add new task
                   var strVar="";
                   strVar += "<tr class=\"tasks_table\" id=\"" + msg + "\">";
+    			  strVar += "<td class=\"task_done_column\"><input type=checkbox><\/td>";
                   strVar += "   <td class=\"task_name_column\"><a href=\"#\" data-toggle=\"modal\" data-target=\"#create_task_modal\" class=\"list_modal edit_task\">";
                   strVar += "   " + task_name + "<\/a><\/td>";
                   strVar += "	<td class=\"task_due_date_column\">" + due_date + "<\/td>";
@@ -181,11 +184,13 @@ $(document).ready(function() {
                   strVar += "	<td><a href=\"#\" data-toggle=\"modal\" data-target=\"#delete_task_modal\" class=\"list_modal delete_task\" id=\"" + msg + "\">";
                   strVar += "   <i class=\"glyphicon glyphicon-remove\"><\/i>";
                   strVar += "   <\/a><\/td>";
-                  strVar += "<tr>";
+                  strVar += "<\/tr>";
 
                   $(".tasks_table_body").append(strVar);
-                  console.log(document.getElementById('manage_table').rows.length);
-                  console.log("table size " + $("#manage_table").rows.length);
+                  if(document.getElementById('manage_table').rows.length == 2){
+                    //console.log("removing empty list tile");
+                    $('.empty_list_tile').children('.jumbotron').remove();
+                  }
               }
             }
         }
@@ -206,6 +211,14 @@ $(document).ready(function() {
                     var task_li = $('#' + task_key).closest('.tasks_table');
                     task_li.remove();
                     toastr.success('Task deleted!');
+                    if(document.getElementById('manage_table').rows.length == 1){
+                      //console.log("removing empty list tile");
+                      var strVar="";
+                      strVar += "<div class=\"jumbotron text-center\">";
+                      strVar += "    <h2 class=\"emtpy_list_title\">The list is empty<\/h2>";
+                      strVar += "<\/div>";
+                      $('.empty_list_tile').append(strVar);
+                    }
                 }
             }
         });
