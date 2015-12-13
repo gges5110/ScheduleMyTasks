@@ -17,24 +17,32 @@ span.list_name_span {
     <div class="col-sm-8 col-sm-offset-2">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h1>Existing Lists for {{ email }}</h1>
+                Existing Lists for {{ email }}
             </div>
 
             <div class="panel-body">
-                <div class="row">
-                    <ol class='todo_list'>
+
+                <table class="table" id="manage_table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Remain</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                         {% for list in lists %}
-                        <li>
-                            <span class="list_name_span">
-                                <a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a>
-                            </span>
-                            <span class="total_seconds_span" id="{{ list.key.urlsafe() }}">
-                                Total seconds.
-                            </span>
-                        </li>
-                        {% endfor %}
-                    </ol>
-                </div>
+
+                        <tr class="list_table" id="{{ list.key.urlsafe() }}">
+                            <td>{{ loop.index }}</td>
+                            <td><a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a></td>
+                            <td class="total_seconds_tr" id="{{ list.key.urlsafe() }}">Total seconds.</td>
+                            <td><a href="#"></a></td>
+                        <tr>
+                        {% endfor%}
+                    </tbody>
+                </table>
             </div>
             <div class="panel-footer clearfix">
                 <div class="col-sm-4">
@@ -58,7 +66,7 @@ $(document).ready(function() {
         function(json) {
             var events = [];
             $.each( json.list, function(index, element) {
-                $('.total_seconds_span#' + element.list_key).text('Total eft    ' + element.hours + ':' + element.minutes);
+                $('.total_seconds_tr#' + element.list_key).text('Total eft    ' + element.hours + ':' + element.minutes);
             });
         }
     );
@@ -92,7 +100,7 @@ $(document).ready(function() {
                 if (msg != 'Failed') {
                     // append new list
                     toastr.success(name + 'List created!');
-                    $("ol.todo_list").append(
+                    $("tr.list_table").append(
                             "<li><a href=\"/manage_tasks?list_key="
                             + msg
                             + "\">"

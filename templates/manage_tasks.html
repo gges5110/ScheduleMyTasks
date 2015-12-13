@@ -25,7 +25,7 @@ div.panel-heading {
 </style>
 
 <div class="container centered" id="container">
-    <div class="col-md-8 col-md-offset-2">
+    <div class="col-md-12">
         <div class="panel panel-default">
             <div class="panel-heading">
                 <div class="col-md-8">
@@ -34,7 +34,7 @@ div.panel-heading {
 
                 <div class="col-md-4 text-right">
                     <form action="/manage_lists">
-                        <button type="submit" class="btn btn-md btn-info">Back to lists</button>
+                        <button type="submit" class="btn btn-md btn-info back_to_list">Back to lists</button>
                     </form>
                 </div>
                 <div id="intelligent_gap"></div>
@@ -43,7 +43,7 @@ div.panel-heading {
             <div class="panel-body">
                 <div class="col-md-12">
                     {% if tasks %}
-                    <table class="table table-condensed" id="manage_table">
+                    <table class="table" id="manage_table">
     					<thead>
     						<tr>
     							<th>Name</th>
@@ -98,6 +98,11 @@ div.panel-heading {
 
 <script>
 $(document).ready(function() {
+    NProgress.done(true);
+
+    $(document).on('click', '.back_to_list', function(event) {
+        NProgress.start();
+    });
 
     var create_dialog, edit_dialog, list_name, list_key;
 
