@@ -28,8 +28,7 @@ span.list_name_span {
                             <span class="list_name_span">
                                 <a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a>
                             </span>
-                            <span class="total_seconds_span" id="{{ list.key.urlsafe() }}">
-                                Total seconds.
+                            <span class="next_item_span" id="{{ list.key.urlsafe() }}">
                             </span>
                         </li>
                         {% endfor %}
@@ -54,11 +53,11 @@ span.list_name_span {
 <script>
 $(document).ready(function() {
     $.getJSON(
-        '/api/total_time_for_list',
+        '/api/next_item_in_list',
         function(json) {
             var events = [];
             $.each( json.list, function(index, element) {
-                $('.total_seconds_span#' + element.list_key).text('Total eft    ' + element.hours + ':' + element.minutes);
+                $('.next_item_span#' + element.list_key).text('Next item due: \"' + element.task_name + '\" on ' + element.due_date);
             });
         }
     );
