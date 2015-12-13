@@ -80,6 +80,9 @@ div.list_container {
 
                                     <div id="collapse{{ loop.index }}" class="accordion-body collapse">
                                         <div class="accordion-inner">
+                                            <script>
+                                                var tasks_to_schedule = [];
+                                            </script>
                                             {% for task in list['tasks'] %}
                                                <li class="list-group-item">
                                                    <form class="form-inline">
@@ -88,7 +91,16 @@ div.list_container {
                                                        </span>
                                                        <div class="checkbox">
                                                            <label for="{{ loop.index }}">
+                                                               {% if task.event_ID|length > 0 %}
+                                                               <input type="checkbox" id="{{ task.key.urlsafe() }}" class="schedule_checkbox" checked="checked">
+                                                               <script>
+                                                                {% for task_event_id in task.event_ID %}
+                                                                    tasks_to_schedule.push('{{task_event_id}}');
+                                                                {% endfor %}
+                                                               </script>
+                                                               {% else %}
                                                                <input type="checkbox" id="{{ task.key.urlsafe() }}" class="schedule_checkbox">
+                                                               {% endif %}
                                                            </label>
                                                        </div>
                                                    </form>
@@ -122,10 +134,8 @@ div.list_container {
 </div>
 
 <script>
+var task_ids_after_schedule = [];
 $(function() { // document ready
-    var tasks_to_schedule = [];
-    var task_ids_after_schedule = [];
-
 
     $(document).on('click', '#learn_more', function(e) {
         NProgress.start();
@@ -137,42 +147,15 @@ $(function() { // document ready
         toastr.success('done');
     });
 
-
-    $(document).on('click', '#save_schedule_btn', function(e) {
-        var tasks_to_save = []
-        var events = $('#calendar').fullCalendar('clientEvents');
-        $.each( events, function(index, event_object) {
-            var index = $.inArray(event_object.id, task_ids_after_schedule);
-            if(index != -1) {
-                var event_dict = {
-                    'fullcalendar_id': event_object.id,
-                    'start': event_object.start,
-                    'end': event_object.end
-                };
-                tasks_to_save.push(event_dict);
-            }
-        });
-        var myJSON = JSON.stringify({task_list: tasks_to_save});
-        toastr.success('JSON = ' + myJSON);
-        $.ajax({
-            url: '/api/save_to_google_calendar',
-            type: 'POST',
-            data: myJSON,
-            processData: false,
-            contentType: "application/json; charset=UTF-8"
-        });
-    });
-
     $(document).on('click', '#schedule_btn', function(e) {
         var source = function( start, end, timezone, callback ) {
             $.ajax({
                 url: '/api/schedule',
                 data: {
-                    task_key: tasks_to_schedule
+                    fullcalendar_id: tasks_to_schedule
                 },
                 traditional: true,
-                xhr: function()
-                  {
+                xhr: function() {
                     var xhr = new window.XMLHttpRequest();
                     //Upload progress
                     xhr.upload.addEventListener("progress", function(evt){
@@ -199,16 +182,54 @@ $(function() { // document ready
                                 start: element.start,
                                 end: element.end,
                                 id : element.task_key,
-                                color: '#f7cac9'
+                                color: '#0c7cd5'
                             });
+                            console.log('element.task_key ' + element.task_key);
                             task_ids_after_schedule.push(element.task_key);
                         }
+                        else if (element.status == 'is_scheduled') {
+                            // The event is already sechduled and saved on calendar, change event color
+                            // find the event
+                            var event_object_list = $('#calendar').fullCalendar( 'clientEvents', element.event_id );
+                            event_object_list[0].color = '#0c7cd5';
+                            $('#calendar').fullCalendar('updateEvent', event_object_list[0]);
+                            console.log('element.event_id = ' + element.event_id);
+                            task_ids_after_schedule.push(element.event_id);
+                        }
+                        console.log('task_ids_after_schedule = ' + task_ids_after_schedule);
                     });
                     callback(events);
                 }
             });
         }
         $('#calendar').fullCalendar( 'addEventSource', source );
+    });
+
+    $(document).on('click', '#save_schedule_btn', function(e) {
+        var tasks_to_save = []
+        var events = $('#calendar').fullCalendar('clientEvents');
+        $.each( events, function(index, event_object) {
+            console.log('event_object.id = ' + event_object.id);
+            var index = $.inArray(event_object.id, task_ids_after_schedule);
+            if(index != -1) {
+                toastr.success('Saving one event with id = ' + event_object.id);
+                var event_dict = {
+                    'fullcalendar_id': event_object.id,
+                    'start': event_object.start,
+                    'end': event_object.end
+                };
+                tasks_to_save.push(event_dict);
+            }
+        });
+        var myJSON = JSON.stringify({task_list: tasks_to_save});
+        toastr.success('JSON = ' + myJSON);
+        $.ajax({
+            url: '/api/save_to_google_calendar',
+            type: 'POST',
+            data: myJSON,
+            processData: false,
+            contentType: "application/json; charset=UTF-8"
+        });
     });
 
 
@@ -223,6 +244,84 @@ $(function() { // document ready
                 tasks_to_schedule.splice(index_in_array, 1);
             }
         }
+    });
+
+    $('#calendar').fullCalendar({
+        header: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'month,agendaWeek,agendaDay'
+        },
+        defaultDate: '2015-12-12',
+        editable: true,
+        eventLimit: true, // allow "more" link when too many events
+        eventSources: [
+            {
+                events: function(start, end, timezone, callback) {
+                    var start_date = new Date(start.unix()*1000);
+                    var end_date = new Date(end.unix()*1000);
+                    var $ajax = $.getJSON(
+                        '/api/get_calendar_event',
+                        {
+                            start: start_date.toISOString(),
+                            end: end_date.toISOString()
+                        },
+                        function(event) {
+                            var events = [];
+                            $.each( event.event_list, function(index, element) {
+                                if(element.is_scheduled === 'on'){
+                                    events.push({
+                                        title: element.title,
+                                        start: element.start,
+                                        end: element.end,
+                                        id : element.id,
+                                        color: '#ff9800',
+                                        url: element.link
+                                    });
+                                }
+                                else {
+                                    events.push({
+                                        editable: false,
+                                        title: element.title,
+                                        start: element.start,
+                                        end: element.end,
+                                        id : element.id,
+                                        url: element.link,
+                                        color: '#378006'
+                                    });
+                                }
+                            });
+                            callback(events);
+                        }
+                    );
+                }
+            },
+            {   // TODO default tasks from on_calendar lists
+                events: function( start, end, timezone, callback ) {
+                    var res = '';
+                    {% for list in lists %}
+                        {% if list.on_calendar %}
+                            res += 'list_key={{ list["key"] }}&';
+                        {% endif%}
+                    {% endfor %}
+                    var $ajax = $.getJSON(
+                        '/api/load_default_on_calendar',
+                        res,
+                        function(event) {
+                            var events = [];
+                            $.each( event.task_list, function(index, element) {
+                                events.push({
+                                    title: element.title,
+                                    start: element.start,
+                                    id : element.event_ID + 'view'
+                                });
+                            });
+                            callback(events);
+                        }
+                    );
+                },
+            }
+        ]
     });
 
     $(document).on('click', '.calendar_off', function(e) {
@@ -288,81 +387,6 @@ $(function() { // document ready
         $('#calendar').fullCalendar( 'addEventSource', source );
     });
 
-    $('#calendar').fullCalendar({
-        header: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'month,agendaWeek,agendaDay'
-        },
-        defaultDate: '2015-12-12',
-        editable: true,
-        eventLimit: true, // allow "more" link when too many events
-        eventSources: [
-            // your event source
-            {
-                events: function(start, end, timezone, callback) {
-                    var start_date = new Date(start.unix()*1000);
-                    var end_date = new Date(end.unix()*1000);
-                    var $ajax = $.getJSON(
-                        '/api/get_calendar_event',
-                        {
-                            start: start_date.toISOString(),
-                            end: end_date.toISOString()
-                        },
-                        function(event) {
-                            var events = [];
-                            $.each( event.event_list, function(index, element) {
-                                if(element.is_scheduled === 'on'){
-                                    events.push({
-                                        title: element.title,
-                                        start: element.start,
-                                        end: element.end,
-                                        color: '#ff9800',
-                                        url: element.link
-                                    });
-                                }
-                                else {
-                                    events.push({
-                                        title: element.title,
-                                        start: element.start,
-                                        end: element.end,
-                                        url: element.link,
-                                        color: '#378006'
-                                    });
-                                }
-                            });
-                            callback(events);
-                        }
-                    );
-                }
-            },
-            {   // TODO default tasks from on_calendar lists
-                events: function( start, end, timezone, callback ) {
-                    var res = '';
-                    {% for list in lists %}
-                        {% if list.on_calendar %}
-                            res += 'list_key={{ list["key"] }}&';
-                        {% endif%}
-                    {% endfor %}
-                    var $ajax = $.getJSON(
-                        '/api/load_default_on_calendar',
-                        res,
-                        function(event) {
-                            var events = [];
-                            $.each( event.task_list, function(index, element) {
-                                events.push({
-                                    title: element.title,
-                                    start: element.start,
-                                    id : element.event_ID + 'view'
-                                });
-                            });
-                            callback(events);
-                        }
-                    );
-                },
-            }
-        ]
-    });
 });
 </script>
 

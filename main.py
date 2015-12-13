@@ -94,13 +94,13 @@ class Calendar(webapp2.RequestHandler):
         # lists = List.query(List.user_email == email).order(List.time_created).fetch()
 
         lists = []
-        for l in List.query(List.user_email == email).fetch():
+        for l in List.query(List.user_email == email).order(List.name).fetch():
             temp = dict()
             temp['name'] = l.name
             temp['key'] = l.key.urlsafe()
             temp['on_calendar'] = l.on_calendar
             temp['tasks'] = []
-            for t in  Task.query(Task.list_key == l.key):
+            for t in  Task.query(Task.list_key == l.key).order(Task.name):
                 temp['tasks'].append(t)
             lists.append(temp)
 
@@ -144,11 +144,6 @@ class ManageLists(webapp2.RequestHandler):
             'email' : email
         }
         self.response.write(template.render( template_values ))
-        # user_info = user_service.userinfo()
-        # userinfo = user_service.userinfo().v2().me().get().execute(http = decorator.http())
-        # userinfo = user_service.userinfo().get().execute(http = decorator.http())
-        # self.response.write()
-
 
 class GetAllLists(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -182,9 +177,10 @@ class GetCalendarEvent(webapp2.RequestHandler):
                         event_dict['start'] = event['start'].get('date')
                         event_dict['end'] = event['end'].get('date')
                 google_calendar_event_id = event['id']
+                event_dict['id'] = google_calendar_event_id
 
                 task_event_id = Task.query(Task.event_ID == google_calendar_event_id).fetch()
-                logging.info('google_calendar_event_id = ' + google_calendar_event_id + ', summary = ' + event['summary'] + ', task_event_id = ' + str(len(task_event_id)))
+                # logging.info('google_calendar_event_id = ' + google_calendar_event_id + ', summary = ' + event['summary'] + ', task_event_id = ' + str(len(task_event_id)))
                 if len(task_event_id) > 0:
                     event_dict['is_scheduled'] = 'on'
                 else:
@@ -237,8 +233,7 @@ class Schedule(webapp2.RequestHandler):
         now = datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
         http = decorator.http()
         # Call the service using the authorized Http object.
-        eventsResult = calendar_service.events().list(
-            calendarId='primary', timeMin=now).execute(http=http)
+        eventsResult = calendar_service.events().list(calendarId='primary', timeMin=now).execute(http=http)
         events = eventsResult.get('items', [])
         # Construct a list with all busy events
         BusyList = []
@@ -251,31 +246,44 @@ class Schedule(webapp2.RequestHandler):
                     b = Busy(event['start'].get('dateTime'), event['end'].get('dateTime'))
                     BusyList.append(b)
 
-        task_keys = self.request.get_all('task_key')
-        for task_key in task_keys:
-            task = ndb.Key(urlsafe = task_key).get()
-            end = task.due_date
-            start = end - timedelta(seconds = task.estimated_finish_time.hour*3600 + task.estimated_finish_time.minute*60)
-            conflict = False
-            for busy in BusyList:
-                if busy.start < start < busy.end or busy.start < end < busy.end:
-                    conflict = True
-                    break
+        fullcalendar_ids = self.request.get_all('fullcalendar_id')
+        logging.info('fullcalendar_ids = ' + str(fullcalendar_ids))
+        for fullcalendar_id in fullcalendar_ids:
 
-            schedule_dict = dict()
-            if conflict == True:
-                # Reschedule
-                schedule_dict['status'] = 'conflict'
-                print 'Reschedule this event!'
+            # check if fullcalendar_id is in event_ID, if so it is already scheduled, update the color to pink
+            task_event_id = Task.query(Task.event_ID == fullcalendar_id).fetch()
+            if len(task_event_id) > 0:
+                schedule_dict = dict()
+                schedule_dict['status'] = 'is_scheduled'
+                schedule_dict['event_id'] = fullcalendar_id
+                schedule_list.append(schedule_dict)
+
+            # else it must be a task key, it is not yet scheduled
             else:
-                schedule_dict['status'] = 'confirmed'
-                schedule_dict['start'] = start.isoformat()
-                schedule_dict['end'] = end.isoformat()
+                task_key = ndb.Key(urlsafe = fullcalendar_id)
+                task = task_key.get()
+                end = task.due_date
+                start = end - timedelta(seconds = task.estimated_finish_time.hour*3600 + task.estimated_finish_time.minute*60)
+                conflict = False
+                for busy in BusyList:
+                    if busy.start < start < busy.end or busy.start < end < busy.end:
+                        conflict = True
+                        break
 
-            schedule_dict['name'] = task.name
-            schedule_dict['task_key'] = task_key
-            schedule_dict['list_key'] = task.list_key.urlsafe()
-            schedule_list.append(schedule_dict)
+                schedule_dict = dict()
+                if conflict == True:
+                    # Reschedule
+                    schedule_dict['status'] = 'conflict'
+                    print 'Reschedule this event!'
+                else:
+                    schedule_dict['status'] = 'confirmed'
+                    schedule_dict['start'] = start.isoformat()
+                    schedule_dict['end'] = end.isoformat()
+
+                schedule_dict['name'] = task.name
+                schedule_dict['task_key'] = task_key.urlsafe()
+                schedule_dict['list_key'] = task.list_key.urlsafe()
+                schedule_list.append(schedule_dict)
 
         obj = dict()
         obj['schedule_list'] = schedule_list
@@ -356,9 +364,18 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
         timezone = timezone_response.get('value', [])
 
         for task_item in task_list:
-            logging.info("save task!")
+            task_event_id = Task.query(Task.event_ID == task_item['fullcalendar_id']).fetch()
+            task = None
+            if len(task_event_id) > 0:
+                # if fullcalendar_id is in task.event_ID, then we need to update event
+                task_name = task_event_id[0].name
+            else:
+                # else create a new event
+                logging.info('task_item[fullcalendar_id] = ' + task_item['fullcalendar_id'])
+                task = ndb.Key(urlsafe = task_item['fullcalendar_id']).get()
+                task_name = task.name
+
             # get final start and end time for scheduled blocks
-            task = ndb.Key(urlsafe = task_item['fullcalendar_id']).get()
             start = datetime.strptime(task_item['start'], '%Y-%m-%dT%H:%M:%S.%fZ')
             end = datetime.strptime(task_item['end'], '%Y-%m-%dT%H:%M:%S.%fZ')
 
@@ -373,19 +390,17 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
                         'dateTime' : start.isoformat(), #2015-12-13T10:00:00-05:00
                         'timeZone': timezone
                     },
-                'summary': task.name + 'prepare'
+                'summary': task_name + 'prepare'
             }
             data_json = json.dumps(data)
 
-            task_event_id = Task.query(Task.event_ID == task_item['fullcalendar_id']).fetch()
-            # if fullcalendar_id is in task.event_ID, then we need to update event
-            if len(task_event_id) > 1:
-                eventsResult = calendar_service.events().update(calendarId='primary', eventId=task_event_id[0].event_ID, body=data ).execute(http=http)
-
-            # else create a new event
+            if len(task_event_id) > 0:
+                # logging.info('task_event_id[0].event_ID = ' + str(task_event_id[0].event_ID[0]))
+                logging.info('updating ' + str(task_item['fullcalendar_id']))
+                eventsResult = calendar_service.events().update(calendarId='primary', eventId=task_item['fullcalendar_id'], body=data).execute(http=http)
             else:
-                eventsResult = calendar_service.events().insert(calendarId='primary', body=data ).execute(http=http)
-                logging.info('len(task.event_ID) = ' + str(len(task.event_ID)))
+                eventsResult = calendar_service.events().insert(calendarId='primary', body= data).execute(http=http)
+                logging.info('creating ' + str(task_item['fullcalendar_id']))
                 if len(task.event_ID) == 0:
                     task.event_ID = [eventsResult['id']]
                 else:
