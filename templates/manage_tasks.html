@@ -96,7 +96,23 @@ div.panel-heading {
 
 
 <script>
+
 $(document).ready(function() {
+    { 
+        $("#manage_table").tablesorter({
+            headers: { 
+                0: { // DONE
+                    // disable it by setting the property sorter to false 
+                    sorter: false 
+                }, 
+                4: { //DELETE
+                    sorter: false
+                }
+            },
+            headerTemplate : '{content}{icon}'
+        });
+
+    }
     NProgress.done(true);
 
     var create_dialog, edit_dialog, list_name, list_key;
