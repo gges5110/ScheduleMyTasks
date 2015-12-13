@@ -33,9 +33,7 @@ div.panel-heading {
                 </div>
 
                 <div class="col-md-4 text-right">
-                    <form action="/manage_lists">
-                        <button type="submit" class="btn btn-md btn-info back_to_list">Back to lists</button>
-                    </form>
+                    <button data-toggle="modal" data-target="#edit_list_modal" class="btn btn-warning edit_list" id="{{ list.key.urlsafe() }}" >Edit List</button>
                 </div>
                 <div id="intelligent_gap"></div>
             </div>
@@ -99,10 +97,6 @@ div.panel-heading {
 <script>
 $(document).ready(function() {
     NProgress.done(true);
-
-    $(document).on('click', '.back_to_list', function(event) {
-        NProgress.start();
-    });
 
     var create_dialog, edit_dialog, list_name, list_key;
 
@@ -219,11 +213,62 @@ $(document).ready(function() {
     $(document).on('click', '.delete_task', function(event) {
         var task_key = $(this).attr('id');
         var task_name = $(this).closest('.tasks_table').children('.task_name_column').children('.edit_task').text();
-        $('#delete_task_title').text('Deleting "' + task_name + '"');
+        $('#delete_task_title').text('Deleting "' + $.trim(task_name) + '"');
         $('#delete_task_id').val(task_key);
+    });
+
+    $(document).on('click', '.modal_button_edit_list', function(event) {
+        var res = 'list_key=' + list_key;
+        var new_list_name = $('#edit_list_name').val();
+        if(list_name === ""){
+            toastr.warning("List Name cannot be empty!");
+        }
+        else{
+            res += "&list_name=" + new_list_name;
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: 'api/create_list',
+                data: res,
+                success: function(msg) {
+                    console.log(msg)
+                    if (msg === 'Edited') {
+                        $('#'+list_key).closest(".panel-heading").children(".col-md-8").text($.trim(new_list_name));
+                        list_name = new_list_name;
+                        toastr.success('List edited!');
+                    }
+                }
+            });
+        }
+    });
+
+    $(document).on('click', '.edit_list', function(event) {
+        $('#edit_list_title').text('Editing "' + $.trim(list_name) + '"');
+        $('#edit_list_name').val($.trim(list_name));
+        $('#edit_list_id').val(list_key);
     });
 });
 </script>
+
+<!-- Modal Edit List -->
+<div class="modal fade" id="edit_list_modal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="edit_list_title">Modal Header</h4>
+        </div>
+        <div class="modal-body">List Name
+            <input type="text" class="form-control" id="edit_list_name">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary modal_button_edit_list" data-dismiss="modal">Save</button>
+          <button type="button" class="btn btn-danger modal_button_delete_list" data-dismiss="modal">Delete List</button>
+        </div>
+      </div>
+    </div>
+</div>
 
 <!-- Modal Delete -->
 <div class="modal fade" id="delete_task_modal" role="dialog">
@@ -239,7 +284,7 @@ $(document).ready(function() {
         </div>
         <div class="modal-footer">
           <input type="hidden" id="delete_task_id">
-          <button type="button" class="btn btn-default modal_button_delete_task" data-dismiss="modal">Delete</button>
+          <button type="button" class="btn btn-danger modal_button_delete_task" data-dismiss="modal">Delete</button>
         </div>
       </div>
     </div>
@@ -298,7 +343,7 @@ $(document).ready(function() {
         </div>
         <div class="modal-footer">
           <input type="hidden" id="delete_task_id">
-          <button type="button" class="btn btn-default modal_button_create_task" data-dismiss="modal">Create</button>
+          <button type="button" class="btn btn-primary modal_button_create_task" data-dismiss="modal">Create</button>
         </div>
       </div>
     </div>

@@ -97,7 +97,7 @@ $(document).ready(function() {
                 data: res,
                 success: function(msg) {
                     console.log(msg)
-                    if (msg != 'Failed') {
+                    if (msg != 'Failed' && msg != 'Edited') {
                         // append new list
                         toastr.success(name + 'List created!');
                         var strVar="";

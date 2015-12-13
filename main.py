@@ -493,12 +493,28 @@ class TotalTimeForList(webapp2.RequestHandler):
 class CreateList(webapp2.RequestHandler):
     @decorator.oauth_required
     def post(self):
-        new_list = List()
-        new_list.name = self.request.get('list_name')
-        new_list.user_email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
-        new_list.put()
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write(new_list.key.urlsafe())
+        current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+        if self.request.get('list_key'):
+            list_key = ndb.Key(urlsafe = self.request.get('list_key'))
+            list_owner = list_key.get().user_email
+            if current_user == list_owner:
+                list = list_key.get()
+                list.name = self.request.get('list_name')
+                list.put()
+                self.response.headers['Content-Type'] = 'text/plain'
+                self.response.write('Edited')
+            else:
+                self.response.headers['Content-Type'] = 'text/plain'
+                self.response.write('Failed')
+            
+                
+        else:
+            new_list = List()
+            new_list.name = self.request.get('list_name')
+            new_list.user_email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+            new_list.put()
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write(new_list.key.urlsafe())
 
 class CreateTask(webapp2.RequestHandler):
     @decorator.oauth_required
