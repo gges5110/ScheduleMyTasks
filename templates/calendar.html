@@ -163,7 +163,7 @@ $(function() { // document ready
                     xhr.addEventListener("progress", function(evt){
                       if (evt.lengthComputable) {
                         var percentComplete = evt.loaded / evt.total;
-                        NProgress.set(percentComplete); 
+                        NProgress.set(percentComplete);
                       }
                     }, false);
                     return xhr;
@@ -171,7 +171,6 @@ $(function() { // document ready
                 success: function(event) {
                     var events = [];
                     $.each( event.schedule_list, function(index, element) {
-                        toastr.success('Schedule' + element.name);
                         if(element.status == 'confirmed') {
                             events.push({
                                 title: element.name,
@@ -188,6 +187,7 @@ $(function() { // document ready
         }
         $('#calendar').fullCalendar( 'addEventSource', source );
     });
+
 
     $('.schedule_checkbox').change(function() {
         var task_key = $(this).attr('id');
@@ -215,7 +215,7 @@ $(function() { // document ready
                 if(msg.status === 'Success') {
                     // TODO: remove event source from fullcalendar api
                     $.each( msg.task_list, function(index, element) {
-                        $('#calendar').fullCalendar( 'removeEvents', element.event_ID );
+                        $('#calendar').fullCalendar( 'removeEvents', element.event_ID + 'view' );
                     });
 
                     //TODO: toggle front end buttons
@@ -248,7 +248,7 @@ $(function() { // document ready
                             events.push({
                                 title: element.title,
                                 start: element.start,
-                                id : element.event_ID
+                                id : element.event_ID + 'view'
                             });
                         });
                         callback(events);

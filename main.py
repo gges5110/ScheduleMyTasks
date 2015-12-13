@@ -317,6 +317,14 @@ class PutListOnCalendar(webapp2.RequestHandler):
         self.response.out.write(json.dumps(obj))
 
 
+class SaveToGoogleCalendar(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def post(self):
+        print self.request.get_all('task_key')
+        
+
+
+
 class SyncGoogleCalendarToList(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
@@ -534,6 +542,7 @@ app = webapp2.WSGIApplication([
     ('/api/get_tasks_from_list', GetTasksFromList),
     ('/api/load_default_on_calendar', LoadDefaultOnCalendar),
     ('/api/total_time_for_list', TotalTimeForList),
+    ('/api/save_to_google_calendar', SaveToGoogleCalendar),
     ('/api/schedule', Schedule),
     ('/api/create_list', CreateList),
     ('/api/create_task', CreateTask),
