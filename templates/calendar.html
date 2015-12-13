@@ -2,7 +2,6 @@
 {% block content %}
 <style type="text/css">
 body {
-  margin: 40px 10px;
   padding: 0;
   font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
   font-size: 14px;
@@ -13,23 +12,14 @@ span.list_name_span {
   width: 100px;
 }
 
-span.task_name_span_modal {
-    display: inline-block;
-    width: 100px;
-}
-
-span.task_eft_modal {
+span.task_name_span {
     display: inline-block;
     width: 100px;
 }
 
 span.accordion_header_span {
     display: inline-block;
-    width: 100px;
-}
-
-ol.todo_list li {
-    padding: .2em 1em;
+    width: 150px;
 }
 
 div.list_container {
@@ -74,7 +64,7 @@ div.list_container {
                                 <div class="accordion-group">
                                     <div class="accordion-heading">
                                         <a class="accordion-toggle accordion_header_span" data-toggle="collapse" data-parent="#accordion2" href="#collapse{{ loop.index }}">
-                                            <span class="glyphicon glyphicon-chevron-right " aria-hidden="true"></span>
+                                            <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
                                             {{ list['name'] }}
                                         </a>
                                         <div class="pull-right">
@@ -92,9 +82,16 @@ div.list_container {
                                         <div class="accordion-inner">
                                             {% for task in list['tasks'] %}
                                                <li class="list-group-item">
-                                                   <span class="task_name_span_modal">
-                                                       {{ task.name }}
-                                                   </span>
+                                                   <form class="form-inline">
+                                                       <span class="task_name_span">
+                                                           {{ task.name }}
+                                                       </span>
+                                                       <div class="checkbox">
+                                                           <label for="{{ loop.index }}">
+                                                               <input type="checkbox" id="{{ task.key.urlsafe() }}" class="schedule_checkbox">
+                                                           </label>
+                                                       </div>
+                                                   </form>
                                                </li>
                                            {% endfor %}
                                         </div>
@@ -116,8 +113,8 @@ div.list_container {
         </div>
         <div class="panel-footer clearfix">
             <div class="pull-right">
-                <a href="#" class="btn btn-primary">Learn More</a>
-                <a href="#" class="btn btn-default">Go Back</a>
+                <a href="#" class="btn btn-primary" id="learn_more">Learn More</a>
+                <a href="#" class="btn btn-default" id="go_back">Go Back</a>
             </div>
         </div>
         <div class="push"></div>
@@ -128,8 +125,23 @@ div.list_container {
 $(function() { // document ready
     var tasks_to_schedule = [];
 
+    $(document).on('click', '#learn_more', function(e) {
+        NProgress.start();
+        toastr.success('start');
+    });
+
+    $(document).on('click', '#go_back', function(e) {
+        NProgress.done(true);
+        toastr.success('done');
+    });
+
+
+    $(document).on('click', '#save_schedule_btn', function(e) {
+        toastr.success('Save!');
+    });
+
     $(document).on('click', '#schedule_btn', function(e) {
-        toastr.success('Schedule!');
+
         var source = function( start, end, timezone, callback ) {
             $.ajax({
                 url: '/api/schedule',
@@ -137,6 +149,29 @@ $(function() { // document ready
                     task_key: tasks_to_schedule
                 },
                 traditional: true,
+                // xhr: function()
+                //   {
+                //     var xhr = new window.XMLHttpRequest();
+                //     //Upload progress
+                //     xhr.upload.addEventListener("progress", function(evt){
+                //       if (evt.lengthComputable) {
+                //         var percentComplete = evt.loaded / evt.total;
+                //         $('.progress-bar').css('width', percentComplete*100+'%').attr('aria-valuenow', percentComplete);
+                //         //Do something with upload progress
+                //         console.log(percentComplete);
+                //       }
+                //     }, false);
+                //     //Download progress
+                //     xhr.addEventListener("progress", function(evt){
+                //       if (evt.lengthComputable) {
+                //         var percentComplete = evt.loaded / evt.total;
+                //         //Do something with download progress
+                //         $('.progress-bar').css('width', percentComplete*100+'%').attr('aria-valuenow', percentComplete);
+                //         console.log(percentComplete);
+                //       }
+                //     }, false);
+                //     return xhr;
+                //   },
                 success: function(event) {
                     var events = [];
                     $.each( event.schedule_list, function(index, element) {
@@ -158,49 +193,17 @@ $(function() { // document ready
         $('#calendar').fullCalendar( 'addEventSource', source );
     });
 
-    $(document).on('click', '.list_modal', function(e) {
-        var modal_list_name = $(this).text();
-        $('.modal-title').text(modal_list_name);
-        // clear the list in modal
-        $('ul.modal_list').empty();
-
-        var $ajax = $.getJSON('/api/get_tasks_from_list',
-            { list_key: $(this).attr('id') },
-            function(msg) {
-                $.each( msg.task_list, function(index, element) {
-                    $('ul.modal_list').append(
-                        "<li class=\"list-group-item modal_list_item\" id=\""
-                            + "\">"
-                            + "<span class=\"task_name_span_modal\">"
-                            + element.task_name
-                            + "</span>"
-                            + "<span class=\"task_eft_modal\">"
-                            + element.eft
-                            + "</span>"
-                            + "<span class=\"task_due_date_span\">"
-                            + element.due_date
-                            + "</span>"
-                            + "<label class=\"checkbox-inline\" for=\""
-                            + index
-                            + "\"><input type=\"checkbox\" id=\""
-                            + element.task_key
-                            + "\"></label>"
-                        + "</li>"
-                    );
-                });
-
-                $('.list-group-item .checkbox-inline input[type="checkbox"]').each(
-                    function() {
-                        var task_key = $(this).attr('id');
-                        var index_in_array = $.inArray(task_key, tasks_to_schedule);
-                        if(index_in_array != -1){
-                            $(this).prop('checked', true);
-                        }
-                    }
-                );
-                // $('.btn-group input[type="checkbox"]')
+    $('.schedule_checkbox').change(function() {
+        var task_key = $(this).attr('id');
+        if($(this).is(":checked")) {
+            tasks_to_schedule.push(task_key);
+        }
+        else {
+            var index_in_array = $.inArray(task_key, tasks_to_schedule);
+            if( index_in_array!= -1){
+                tasks_to_schedule.splice(index_in_array, 1);
             }
-        );
+        }
     });
 
     $(document).on('click', '.calendar_off', function(e) {

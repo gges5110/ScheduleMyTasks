@@ -26,17 +26,22 @@
         <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.min.css" />
         <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.print.css" media='print'/>
 
+        <!-- NProgress -->
+        <script src='/bower_components/nprogress/nprogress.js'></script>
+        <link rel='stylesheet' href='/bower_components/nprogress/nprogress.css'/>
+
         <!-- toastr -->
         <link href="./toastr/toastr.css" rel="stylesheet"/>
         <script type="text/javascript" src="./toastr/toastr.js"></script>
 
         <link href="/bootstrap/css/theme.css" rel="stylesheet"/>
+
     </head>
 
     <body>
         <div class="wrapper">
             <!-- Fixed navbar -->
-            <nav class="navbar navbar-inverse navbar-fixed-top">
+            <nav class="navbar navbar-default navbar-fixed-top">
                 <div class="container">
                     <div class="navbar-header">
                         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -71,6 +76,8 @@
                 </div>
             </nav>
 
+
+
             <div class="container" style="padding-top: 100px;" role="main">
 
             {% block header %}
@@ -91,6 +98,14 @@
                 </p>
             </div>
         </footer>
+        <script>
+        $(function() { // document ready
+            NProgress.configure({ easing: 'ease', speed: 800 });
+
+            NProgress.start();
+            NProgress.done(true);
+        });
+        </script>
 
         <script type="text/javascript" src="/bower_components/fullcalendar/dist/fullcalendar.min.js"></script>
     </body>
