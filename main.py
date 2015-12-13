@@ -593,6 +593,8 @@ class DeleteList(webapp2.RequestHandler):
     def post(self):
         if self.request.get('list_key'):
             list_key = ndb.Key(urlsafe = self.request.get('list_key'))
+            for task in Task.query(Task.list_key == list_key):
+                task.key.delete()
             list_key.delete()
             self.response.headers['Content-Type'] = 'text/plain'
             self.response.write('Success')
