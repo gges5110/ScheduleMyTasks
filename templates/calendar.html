@@ -149,29 +149,25 @@ $(function() { // document ready
                     task_key: tasks_to_schedule
                 },
                 traditional: true,
-                // xhr: function()
-                //   {
-                //     var xhr = new window.XMLHttpRequest();
-                //     //Upload progress
-                //     xhr.upload.addEventListener("progress", function(evt){
-                //       if (evt.lengthComputable) {
-                //         var percentComplete = evt.loaded / evt.total;
-                //         $('.progress-bar').css('width', percentComplete*100+'%').attr('aria-valuenow', percentComplete);
-                //         //Do something with upload progress
-                //         console.log(percentComplete);
-                //       }
-                //     }, false);
-                //     //Download progress
-                //     xhr.addEventListener("progress", function(evt){
-                //       if (evt.lengthComputable) {
-                //         var percentComplete = evt.loaded / evt.total;
-                //         //Do something with download progress
-                //         $('.progress-bar').css('width', percentComplete*100+'%').attr('aria-valuenow', percentComplete);
-                //         console.log(percentComplete);
-                //       }
-                //     }, false);
-                //     return xhr;
-                //   },
+                xhr: function()
+                  {
+                    var xhr = new window.XMLHttpRequest();
+                    //Upload progress
+                    xhr.upload.addEventListener("progress", function(evt){
+                      if (evt.lengthComputable) {
+                        var percentComplete = evt.loaded / evt.total;
+                        NProgress.set(percentComplete);
+                      }
+                    }, false);
+                    //Download progress
+                    xhr.addEventListener("progress", function(evt){
+                      if (evt.lengthComputable) {
+                        var percentComplete = evt.loaded / evt.total;
+                        NProgress.set(percentComplete); 
+                      }
+                    }, false);
+                    return xhr;
+                  },
                 success: function(event) {
                     var events = [];
                     $.each( event.schedule_list, function(index, element) {

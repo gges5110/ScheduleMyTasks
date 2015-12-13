@@ -43,26 +43,31 @@ div.panel-heading {
             <div class="panel-body">
                 <div class="col-md-12">
                     {% if tasks %}
-                        <ul class="list-group">
-                        {% for task in tasks %}
-                            <li class="list-group-item" id="{{ task.key.urlsafe() }}">
-                                <span class="task_name_span">
-                                    <a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
-                                      {{ task.name }}
-                                    </a>
-                                </span>
-                                <span class="task_eft_span">
-                                    {{ task.estimated_finish_time.isoformat()[0:5] }}
-                                </span>
-                                <span class="task_due_date_span">
-                                    {{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }}
-                                </span>
-                                <a href="#" data-toggle="modal" data-target="#delete_task_modal" class="list_modal delete_task" id="{{ task.key.urlsafe() }}">
+                    <table class="table table-condensed" id="manage_table">
+    					<thead>
+    						<tr>
+    							<th>Name</th>
+    							<th>Due Date</th>
+    							<th>Remain</th>
+    							<th>Delete</th>
+    						</tr>
+    					</thead>
+    					<tbody>
+    						{% for task in tasks %}
+
+    						<tr class="tasks_table" id="{{ task.key.urlsafe() }}">
+    							<td><a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
+                                {{ task.name }}</a></td>
+    							<td>{{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }}</td>
+    							<td>{{ task.estimated_finish_time.isoformat()[0:5] }}</td>
+    							<td><a href="#" data-toggle="modal" data-target="#delete_task_modal" class="list_modal delete_task" id="{{ task.key.urlsafe() }}">
                                     <i class="glyphicon glyphicon-remove"></i>
-                                </a>
-                            </li>
-                        {% endfor %}
-                        </ul>
+                                </a></td>
+    						<tr>
+
+    						{% endfor%}
+    					</tbody>
+    				</table>
                     {% else %}
                         <div class="tile">
                             <div class="jumbotron text-center">
@@ -125,7 +130,7 @@ $(document).ready(function() {
         $('#task_name').val('');
         $('#due_date').val('');
         $('#eft').val('');
-        
+
         task_id = '';
     });
 
@@ -171,14 +176,14 @@ $(document).ready(function() {
                     // TODO add new task
                   $("ul.list-group").append(
                         "<li class=\"list-group-item\" id=\"" + msg +"\">" +
-                            "<span class=\"task_name_span\">" + 
+                            "<span class=\"task_name_span\">" +
                                 "<a href=\"#\" data-toggle=\"modal\" data-target=\"#create_task_modal\" class=\"list_modal edit_task\">" +
                                     task_name +
                                 "<\/a>" +
                             "<\/span>" +
-                            "<span class=\"task_eft_span\">" + 
-                                eft + 
-                            "<\/span>" + 
+                            "<span class=\"task_eft_span\">" +
+                                eft +
+                            "<\/span>" +
                             "<span class=\"task_due_date_span\">" +
                                 due_date +
                             "<\/span>" +
@@ -215,7 +220,7 @@ $(document).ready(function() {
     $(document).on('click', '.delete_task', function(event) {
         var task_key = $(this).attr('id');
         var task_name = $(this).closest('.list-group-item').children('.task_name_span').children('.edit_task').text();
-        $('#delete_task_title').text('Deleting "' + task_name + '"'); 
+        $('#delete_task_title').text('Deleting "' + task_name + '"');
         $('#delete_task_id').val(task_key);
     });
 });
