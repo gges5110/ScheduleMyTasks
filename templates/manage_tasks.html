@@ -2,7 +2,7 @@
 {% block content %}
 <style type="text/css">
 
-span.task_name_span {
+span.task_name_column {
   display: inline-block;
   width: 200px;
 }
@@ -52,14 +52,14 @@ div.panel-heading {
     							<th>Delete</th>
     						</tr>
     					</thead>
-    					<tbody>
+    					<tbody class="tasks_table_body">
     						{% for task in tasks %}
 
     						<tr class="tasks_table" id="{{ task.key.urlsafe() }}">
-    							<td><a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
+    							<td class="task_name_column"><a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
                                 {{ task.name }}</a></td>
-    							<td>{{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }}</td>
-    							<td>{{ task.estimated_finish_time.isoformat()[0:5] }}</td>
+    							<td class="task_due_date_column">{{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }}</td>
+    							<td class="task_eft_column">{{ task.estimated_finish_time.isoformat()[0:5] }}</td>
     							<td><a href="#" data-toggle="modal" data-target="#delete_task_modal" class="list_modal delete_task" id="{{ task.key.urlsafe() }}">
                                     <i class="glyphicon glyphicon-remove"></i>
                                 </a></td>
@@ -111,12 +111,12 @@ $(document).ready(function() {
         var task_name = $(this).text();
         // console.log(task_name);
         $('#task_name').val($.trim(task_name));
-        task_id = $(this).closest('li.list-group-item').attr('id');
+        task_id = $(this).closest('tr.tasks_table').attr('id');
 
-        var task_due_date = $(this).closest('li.list-group-item').children('.task_due_date_span').text();
+        var task_due_date = $(this).closest('tr.tasks_table').children('.task_due_date_column').text();
         $('#due_date').val($.trim(task_due_date));
 
-        var task_eft = $(this).closest('li.list-group-item').children('.task_eft_span').text();
+        var task_eft = $(this).closest('tr.tasks_table').children('.task_eft_column').text();
         $('#eft').val($.trim(task_eft));
 
         $('.create_task_title').text('Edit Task');
@@ -165,33 +165,27 @@ $(document).ready(function() {
 
             function appendTask(msg) {
               if (msg == 'Edited'){
-                  $('#'+task_id).children('.task_name_span').children('.edit_task').text(task_name);
-                  $('#'+task_id).children('.task_eft_span').text(eft);
-                  $('#'+task_id).children('.task_due_date_span').text(due_date);
+                  $('#'+task_id).children('.task_name_column').children('.edit_task').text(task_name);
+                  $('#'+task_id).children('.task_eft_column').text(eft);
+                  $('#'+task_id).children('.task_due_date_column').text(due_date);
                   toastr.success('Task edited');
               }
               else if (msg != 'Failed') {
                   // append new task
                   toastr.success('Task created!');
                     // TODO add new task
-                  $("ul.list-group").append(
-                        "<li class=\"list-group-item\" id=\"" + msg +"\">" +
-                            "<span class=\"task_name_span\">" +
-                                "<a href=\"#\" data-toggle=\"modal\" data-target=\"#create_task_modal\" class=\"list_modal edit_task\">" +
-                                    task_name +
-                                "<\/a>" +
-                            "<\/span>" +
-                            "<span class=\"task_eft_span\">" +
-                                eft +
-                            "<\/span>" +
-                            "<span class=\"task_due_date_span\">" +
-                                due_date +
-                            "<\/span>" +
-                            "<a href=\"#\" data-toggle=\"modal\" data-target=\"#delete_task_modal\" class=\"list_modal delete_task\" id=\"" + msg + "\">" +
-                                "<i class=\"glyphicon glyphicon-remove\"><\/i>" +
-                            "<\/a>" +
-                        "<\/li>"
-                    );
+                  var strVar="";
+                  strVar += "<tr class=\"tasks_table\" id=\"" + msg + "\">";
+                  strVar += "   <td class=\"task_name_column\"><a href=\"#\" data-toggle=\"modal\" data-target=\"#create_task_modal\" class=\"list_modal edit_task\">";
+                  strVar += "   " + task_name + "<\/a><\/td>";
+                  strVar += "	<td class=\"task_due_date_column\">" + due_date + "<\/td>";
+                  strVar += "	<td class=\"task_eft_column\">" + eft + "<\/td>";
+                  strVar += "	<td><a href=\"#\" data-toggle=\"modal\" data-target=\"#delete_task_modal\" class=\"list_modal delete_task\" id=\"" + msg + "\">";
+                  strVar += "   <i class=\"glyphicon glyphicon-remove\"><\/i>";
+                  strVar += "   <\/a><\/td>";
+                  strVar += "<tr>";
+
+                  $(".tasks_table_body").append(strVar);
               }
             }
         }
@@ -209,7 +203,7 @@ $(document).ready(function() {
             success: function(msg) {
                 console.log(msg)
                 if (msg === 'Success') {
-                    var task_li = $('#' + task_key).closest('.list-group-item');
+                    var task_li = $('#' + task_key).closest('.tasks_table');
                     task_li.remove();
                     toastr.success('Task deleted!');
                 }
@@ -219,7 +213,7 @@ $(document).ready(function() {
 
     $(document).on('click', '.delete_task', function(event) {
         var task_key = $(this).attr('id');
-        var task_name = $(this).closest('.list-group-item').children('.task_name_span').children('.edit_task').text();
+        var task_name = $(this).closest('.tasks_table').children('.task_name_column').children('.edit_task').text();
         $('#delete_task_title').text('Deleting "' + task_name + '"');
         $('#delete_task_id').val(task_key);
     });

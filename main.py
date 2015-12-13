@@ -119,7 +119,7 @@ class ManageTasks(webapp2.RequestHandler):
             eft_choices.append(start_time.strftime("%H:%M"))
 
         list_key = ndb.Key(urlsafe = self.request.get('list_key'))
-        tasks = Task.query(Task.list_key == list_key)
+        tasks = Task.query(Task.list_key == list_key).order(Task.due_date)
         template = JINJA_ENVIRONMENT.get_template('/templates/manage_tasks.html')
         template_values = {
             'list' : list_key.get(),
