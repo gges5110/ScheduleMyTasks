@@ -492,7 +492,7 @@ class NextItemInList(webapp2.RequestHandler):
         next_item_list = []
         for list in lists:
             next_item_dict = dict()
-            tasks = Task.query(Task.list_key == list.key).order(Task.due_date).fetch(1)
+            tasks = Task.query(ndb.AND(Task.list_key == list.key, Task.due_date > datetime.now())).order(Task.due_date).fetch(1)
             if tasks:
                 next_item_dict['list_key'] = list.key.urlsafe()
                 next_item_dict['task_name'] = tasks[0].name
@@ -542,12 +542,41 @@ class TotalTimeForList(webapp2.RequestHandler):
 class CreateList(webapp2.RequestHandler):
     @decorator.oauth_required
     def post(self):
-        new_list = List()
-        new_list.name = self.request.get('list_name')
-        new_list.user_email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
-        new_list.put()
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write(new_list.key.urlsafe())
+        current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+        if self.request.get('list_key'):
+            list_key = ndb.Key(urlsafe = self.request.get('list_key'))
+            list_owner = list_key.get().user_email
+            if current_user == list_owner:
+                list = list_key.get()
+                list.name = self.request.get('list_name')
+                list.put()
+                self.response.headers['Content-Type'] = 'text/plain'
+                self.response.write('Edited')
+            else:
+                self.response.headers['Content-Type'] = 'text/plain'
+                self.response.write('Failed')
+            
+                
+        else:
+            new_list = List()
+            new_list.name = self.request.get('list_name')
+            new_list.user_email = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+            new_list.put()
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write(new_list.key.urlsafe())
+
+class DeleteList(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def post(self):
+        if self.request.get('list_key'):
+            list_key = ndb.Key(urlsafe = self.request.get('list_key'))
+            list_key.delete()
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Success')
+        else:
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Failed')
+        # self.redirect('/manage_lists')
 
 class CreateTask(webapp2.RequestHandler):
     @decorator.oauth_required
@@ -594,10 +623,14 @@ class EditTask(webapp2.RequestHandler):
 class DeleteTask(webapp2.RequestHandler):
     @decorator.oauth_required
     def post(self):
-        task_key = ndb.Key(urlsafe = self.request.get('task_key'))
-        task_key.delete()
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write('Success')
+        if self.request.get('task_key'):
+            task_key = ndb.Key(urlsafe = self.request.get('task_key'))
+            task_key.delete()
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Success')
+        else:
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Failed')
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
@@ -615,6 +648,7 @@ app = webapp2.WSGIApplication([
     ('/api/next_item_in_list', NextItemInList),
     ('/api/schedule', Schedule),
     ('/api/create_list', CreateList),
+    ('/api/delete_list', DeleteList),
     ('/api/create_task', CreateTask),
     ('/api/edit_task', EditTask),
     ('/api/delete_task', DeleteTask),

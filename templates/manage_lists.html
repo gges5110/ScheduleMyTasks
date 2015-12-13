@@ -16,28 +16,24 @@ span.list_name_span {
 <div class="container centered">
     <div class="col-sm-8 col-sm-offset-2">
         <div class="panel panel-default">
-            <div class="panel-heading">
+            <h4 class="panel-heading">
                 Existing Lists for {{ email }}
-            </div>
+            </h4>
 
             <div class="panel-body">
 
                 <table class="table" id="manage_table">
                     <thead>
                         <tr>
-                            <th>#</th>
                             <th>Name</th>
-                            <th>Remain</th>
-                            <th>Delete</th>
+                            <th>Next Item Due</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class=lists_table_body>
                         {% for list in lists %}
-                        <tr class="list_table" id="{{ list.key.urlsafe() }}">
-                            <td>{{ loop.index }}</td>
+                        <tr class="lists_table" id="{{ list.key.urlsafe() }}">
                             <td><a href="/manage_tasks?list_key={{ list.key.urlsafe() }}">{{ list.name }}</a></td>
-                            <td class="next_item_span" id="{{ list.key.urlsafe() }}"></td>
-                            <td><a href="#"></a></td>
+                            <td class="next_item_column" id="{{ list.key.urlsafe() }}"></td>
                         </tr>
                         {% endfor%}
                     </tbody>
@@ -66,7 +62,7 @@ $(document).ready(function() {
         function(json) {
             var events = [];
             $.each( json.list, function(index, element) {
-                $('.next_item_span#' + element.list_key).text('Next item due: \"' + element.task_name + '\" on ' + element.due_date);
+                $('.next_item_column#' + element.list_key).text('\"' + element.task_name + '\" on ' + element.due_date);
             });
         }
     );
@@ -89,27 +85,33 @@ $(document).ready(function() {
     $("#create_list_btn").on('click', function(e) {
         e.preventDefault();
         var list_name = $('#list_name').val();
-        var res = "list_name=" + list_name;
-        toastr.warning('Creating list: ' + list_name);
-        $.ajax({
-            type: 'POST',
-            url: 'api/create_list',
-            data: res,
-            success: function(msg) {
-                console.log(msg)
-                if (msg != 'Failed') {
-                    // append new list
-                    toastr.success(name + 'List created!');
-                    $("tr.list_table").append(
-                            "<li><a href=\"/manage_tasks?list_key="
-                            + msg
-                            + "\">"
-                            + list_name
-                            + "</a></li>"
-                    );
+        if(list_name === ""){
+            toastr.warning('List name cannot be empty!');
+        }
+        else{
+            var res = "list_name=" + list_name;
+            //toastr.warning('Creating list: ' + list_name);
+            $.ajax({
+                type: 'POST',
+                url: 'api/create_list',
+                data: res,
+                success: function(msg) {
+                    console.log(msg)
+                    if (msg != 'Failed' && msg != 'Edited') {
+                        // append new list
+                        toastr.success(name + 'List created!');
+                        var strVar="";
+                        strVar += "<tr class=\"lists_table\" id=\"" + msg + "\">";
+                        strVar += "    <td><a href=\"\/manage_tasks?list_key=" + msg + "\">" + list_name +"<\/a><\/td>";
+                        strVar += "    <td class=\"next_item_column\" id=\"" + msg + "\"><\/td>";
+                        strVar += "<tr>";
+
+                        $(".lists_table_body").append(strVar);
+                        $('#list_name').val("");
+                    }
                 }
-            }
-        });
+            });
+        }
     });
 });
 </script>

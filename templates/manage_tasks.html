@@ -33,19 +33,17 @@ div.panel-heading {
                 </div>
 
                 <div class="col-md-4 text-right">
-                    <form action="/manage_lists">
-                        <button type="submit" class="btn btn-md btn-info back_to_list">Back to lists</button>
-                    </form>
+                    <button data-toggle="modal" data-target="#edit_list_modal" class="btn btn-warning edit_list" id="{{ list.key.urlsafe() }}" >Edit List</button>
                 </div>
                 <div id="intelligent_gap"></div>
             </div>
 
             <div class="panel-body">
                 <div class="col-md-12">
-                    {% if tasks %}
                     <table class="table" id="manage_table">
     					<thead>
     						<tr>
+    							<th>Done</th>
     							<th>Name</th>
     							<th>Due Date</th>
     							<th>Remain</th>
@@ -56,6 +54,7 @@ div.panel-heading {
     						{% for task in tasks %}
 
     						<tr class="tasks_table" id="{{ task.key.urlsafe() }}">
+    							<td class="task_done_column"><input type=checkbox></td>
     							<td class="task_name_column"><a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
                                 {{ task.name }}</a></td>
     							<td class="task_due_date_column">{{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }}</td>
@@ -63,18 +62,18 @@ div.panel-heading {
     							<td><a href="#" data-toggle="modal" data-target="#delete_task_modal" class="list_modal delete_task" id="{{ task.key.urlsafe() }}">
                                     <i class="glyphicon glyphicon-remove"></i>
                                 </a></td>
-    						<tr>
+    						</tr>
 
     						{% endfor%}
     					</tbody>
     				</table>
-                    {% else %}
-                        <div class="tile">
+                        <div class="empty_list_tile">
+                    {% if not tasks %}
                             <div class="jumbotron text-center">
-                                <h2>The list is empty</h2>
+                                <h2 class="emtpy_list_title">The list is empty</h2>
                             </div>
-                        </div>
                     {% endif %}
+                        </div>
                 </div>
             </div>
 
@@ -100,15 +99,21 @@ div.panel-heading {
 $(document).ready(function() {
     NProgress.done(true);
 
-    $(document).on('click', '.back_to_list', function(event) {
-        NProgress.start();
-    });
-
     var create_dialog, edit_dialog, list_name, list_key;
 
     list_name = '{{ list.name }}';
     list_key = '{{ list.key.urlsafe() }}';
     var task_id;
+
+    $(document).on('click', '.task_done_column', function(event){
+        if($(this).children().is(":checked")) {
+            $(this).closest('.tasks_table').addClass('active');
+        }
+        else{
+            $(this).closest('.tasks_table').removeClass('active');
+        }
+
+    });
 
     $(document).on('click', '.edit_task', function(event) {
         //toastr.warning('Edit task.');
@@ -181,6 +186,7 @@ $(document).ready(function() {
                     // TODO add new task
                   var strVar="";
                   strVar += "<tr class=\"tasks_table\" id=\"" + msg + "\">";
+    			  strVar += "<td class=\"task_done_column\"><input type=checkbox><\/td>";
                   strVar += "   <td class=\"task_name_column\"><a href=\"#\" data-toggle=\"modal\" data-target=\"#create_task_modal\" class=\"list_modal edit_task\">";
                   strVar += "   " + task_name + "<\/a><\/td>";
                   strVar += "	<td class=\"task_due_date_column\">" + due_date + "<\/td>";
@@ -188,9 +194,13 @@ $(document).ready(function() {
                   strVar += "	<td><a href=\"#\" data-toggle=\"modal\" data-target=\"#delete_task_modal\" class=\"list_modal delete_task\" id=\"" + msg + "\">";
                   strVar += "   <i class=\"glyphicon glyphicon-remove\"><\/i>";
                   strVar += "   <\/a><\/td>";
-                  strVar += "<tr>";
+                  strVar += "<\/tr>";
 
                   $(".tasks_table_body").append(strVar);
+                  if(document.getElementById('manage_table').rows.length == 2){
+                    //console.log("removing empty list tile");
+                    $('.empty_list_tile').children('.jumbotron').remove();
+                  }
               }
             }
         }
@@ -211,6 +221,14 @@ $(document).ready(function() {
                     var task_li = $('#' + task_key).closest('.tasks_table');
                     task_li.remove();
                     toastr.success('Task deleted!');
+                    if(document.getElementById('manage_table').rows.length == 1){
+                      //console.log("removing empty list tile");
+                      var strVar="";
+                      strVar += "<div class=\"jumbotron text-center\">";
+                      strVar += "    <h2 class=\"emtpy_list_title\">The list is empty<\/h2>";
+                      strVar += "<\/div>";
+                      $('.empty_list_tile').append(strVar);
+                    }
                 }
             }
         });
@@ -219,11 +237,108 @@ $(document).ready(function() {
     $(document).on('click', '.delete_task', function(event) {
         var task_key = $(this).attr('id');
         var task_name = $(this).closest('.tasks_table').children('.task_name_column').children('.edit_task').text();
-        $('#delete_task_title').text('Deleting "' + task_name + '"');
+        $('#delete_task_title').text('Deleting "' + $.trim(task_name) + '"');
         $('#delete_task_id').val(task_key);
+    });
+
+    $(document).on('click', '.modal_button_edit_list', function(event) {
+        var res = 'list_key=' + list_key;
+        var new_list_name = $('#edit_list_name').val();
+        if(list_name === ""){
+            toastr.warning("List Name cannot be empty!");
+        }
+        else{
+            res += "&list_name=" + new_list_name;
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: 'api/create_list',
+                data: res,
+                success: function(msg) {
+                    console.log(msg)
+                    if (msg === 'Edited') {
+                        $('#'+list_key).closest(".panel-heading").children(".col-md-8").text($.trim(new_list_name));
+                        list_name = new_list_name;
+                        toastr.success('List edited!');
+                    }
+                }
+            });
+        }
+    });
+
+    $(document).on('click', '.edit_list', function(event) {
+        $('#edit_list_title').text('Editing "' + $.trim(list_name) + '"');
+        $('#edit_list_name').val($.trim(list_name));
+        $('#edit_list_id').val(list_key);
+    });
+
+    $(document).on('click', '.delete_list', function(event) {
+        $('#delete_list_title').text('Deleting "' + $.trim(list_name) + '"');
+        $('#delete_list_id').val(list_key);
+    });
+
+    $(document).on('click', '.modal_button_delete_list', function(event) {
+        var res = 'list_key=' + list_key;
+        // toastr.success('Task deleting!');
+        event.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: 'api/delete_list',
+            data: res,
+            success: function(msg) {
+                console.log(msg)
+                if (msg === 'Success') {
+                    window.location.assign("/manage_lists")
+                    toastr.success('List deleted!');
+                }
+                else{
+                    toastr.error('Error!');
+                }
+            }
+        });
     });
 });
 </script>
+
+<!-- Modal Edit List -->
+<div class="modal fade" id="edit_list_modal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="edit_list_title">Modal Header</h4>
+        </div>
+        <div class="modal-body">List Name
+            <input type="text" class="form-control" id="edit_list_name">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary modal_button_edit_list" data-dismiss="modal">Save</button>
+          <button data-toggle="modal" data-target="#delete_list_modal" data-dismiss="modal" class="btn btn-danger delete_list">Delete List</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- Modal Delete List -->
+<div class="modal fade" id="delete_list_modal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="delete_list_title">Modal Header</h4>
+        </div>
+        <div class="modal-body">
+            Are you sure you want to delete?
+        </div>
+        <div class="modal-footer">
+          <input type="hidden" id="delete_list_id">
+          <button type="button" class="btn btn-danger modal_button_delete_list" data-dismiss="modal">Delete</button>
+        </div>
+      </div>
+    </div>
+</div>
 
 <!-- Modal Delete -->
 <div class="modal fade" id="delete_task_modal" role="dialog">
@@ -239,7 +354,7 @@ $(document).ready(function() {
         </div>
         <div class="modal-footer">
           <input type="hidden" id="delete_task_id">
-          <button type="button" class="btn btn-default modal_button_delete_task" data-dismiss="modal">Delete</button>
+          <button type="button" class="btn btn-danger modal_button_delete_task" data-dismiss="modal">Delete</button>
         </div>
       </div>
     </div>
@@ -298,7 +413,7 @@ $(document).ready(function() {
         </div>
         <div class="modal-footer">
           <input type="hidden" id="delete_task_id">
-          <button type="button" class="btn btn-default modal_button_create_task" data-dismiss="modal">Create</button>
+          <button type="button" class="btn btn-primary modal_button_create_task" data-dismiss="modal">Create</button>
         </div>
       </div>
     </div>
