@@ -516,6 +516,19 @@ class CreateList(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/plain'
             self.response.write(new_list.key.urlsafe())
 
+class DeleteList(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def post(self):
+        if self.request.get('list_key'):
+            list_key = ndb.Key(urlsafe = self.request.get('list_key'))
+            list_key.delete()
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Success')
+        else:
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Failed')
+        # self.redirect('/manage_lists')
+
 class CreateTask(webapp2.RequestHandler):
     @decorator.oauth_required
     def post(self):
@@ -561,10 +574,14 @@ class EditTask(webapp2.RequestHandler):
 class DeleteTask(webapp2.RequestHandler):
     @decorator.oauth_required
     def post(self):
-        task_key = ndb.Key(urlsafe = self.request.get('task_key'))
-        task_key.delete()
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write('Success')
+        if self.request.get('task_key'):
+            task_key = ndb.Key(urlsafe = self.request.get('task_key'))
+            task_key.delete()
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Success')
+        else:
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Failed')
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
@@ -582,6 +599,7 @@ app = webapp2.WSGIApplication([
     ('/api/next_item_in_list', NextItemInList),
     ('/api/schedule', Schedule),
     ('/api/create_list', CreateList),
+    ('/api/delete_list', DeleteList),
     ('/api/create_task', CreateTask),
     ('/api/edit_task', EditTask),
     ('/api/delete_task', DeleteTask),

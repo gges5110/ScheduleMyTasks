@@ -40,7 +40,6 @@ div.panel-heading {
 
             <div class="panel-body">
                 <div class="col-md-12">
-                    {% if tasks %}
                     <table class="table" id="manage_table">
     					<thead>
     						<tr>
@@ -66,8 +65,8 @@ div.panel-heading {
     						{% endfor%}
     					</tbody>
     				</table>
-                    {% else %}
-                        <div class="tile">
+                    {% if not tasks %}
+                        <div class="empty_list_tile">
                             <div class="jumbotron text-center">
                                 <h2>The list is empty</h2>
                             </div>
@@ -185,6 +184,8 @@ $(document).ready(function() {
                   strVar += "<tr>";
 
                   $(".tasks_table_body").append(strVar);
+                  console.log(document.getElementById('manage_table').rows.length);
+                  console.log("table size " + $("#manage_table").rows.length);
               }
             }
         }
@@ -247,6 +248,32 @@ $(document).ready(function() {
         $('#edit_list_name').val($.trim(list_name));
         $('#edit_list_id').val(list_key);
     });
+
+    $(document).on('click', '.delete_list', function(event) {
+        $('#delete_list_title').text('Deleting "' + $.trim(list_name) + '"');
+        $('#delete_list_id').val(list_key);
+    });
+
+    $(document).on('click', '.modal_button_delete_list', function(event) {
+        var res = 'list_key=' + list_key;
+        // toastr.success('Task deleting!');
+        event.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: 'api/delete_list',
+            data: res,
+            success: function(msg) {
+                console.log(msg)
+                if (msg === 'Success') {
+                    window.location.assign("/manage_lists")
+                    toastr.success('List deleted!');
+                }
+                else{
+                    toastr.error('Error!');
+                }
+            }
+        });
+    });
 });
 </script>
 
@@ -264,7 +291,27 @@ $(document).ready(function() {
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary modal_button_edit_list" data-dismiss="modal">Save</button>
-          <button type="button" class="btn btn-danger modal_button_delete_list" data-dismiss="modal">Delete List</button>
+          <button data-toggle="modal" data-target="#delete_list_modal" data-dismiss="modal" class="btn btn-danger delete_list">Delete List</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- Modal Delete List -->
+<div class="modal fade" id="delete_list_modal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="delete_list_title">Modal Header</h4>
+        </div>
+        <div class="modal-body">
+            Are you sure you want to delete?
+        </div>
+        <div class="modal-footer">
+          <input type="hidden" id="delete_list_id">
+          <button type="button" class="btn btn-danger modal_button_delete_list" data-dismiss="modal">Delete</button>
         </div>
       </div>
     </div>
