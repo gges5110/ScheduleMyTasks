@@ -31,6 +31,8 @@ from google.appengine.api import users, memcache
 from apiclient.discovery import build
 from oauth2client.appengine import OAuth2DecoratorFromClientSecrets
 
+logging.getLogger().setLevel(logging.DEBUG)
+
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader = jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions = ['jinja2.ext.autoescape'],
@@ -170,6 +172,7 @@ class GetCalendarEvent(webapp2.RequestHandler):
             if 'status' in event and event['status'] == 'confirmed':
                 if 'summary' in event:
                     event_dict['title'] = event['summary']
+                    event_dict['link'] = event['htmlLink']
                 if 'start' in event:
                     if 'dateTime' in event['start']:
                         event_dict['start'] = event['start'].get('dateTime')
@@ -177,6 +180,16 @@ class GetCalendarEvent(webapp2.RequestHandler):
                     else:
                         event_dict['start'] = event['start'].get('date')
                         event_dict['end'] = event['end'].get('date')
+                google_calendar_event_id = event['id']
+
+                task_event_id = Task.query(Task.event_ID == google_calendar_event_id).fetch()
+                logging.info('google_calendar_event_id = ' + google_calendar_event_id + ', summary = ' + event['summary'] + ', task_event_id = ' + str(len(task_event_id)))
+                if len(task_event_id) > 0:
+                    event_dict['is_scheduled'] = 'on'
+                else:
+                    event_dict['is_scheduled'] = 'off'
+
+
                 event_list.append(event_dict)
 
         obj = dict()
@@ -342,8 +355,9 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
         timezone = timezone_response.get('value', [])
 
         for task_item in task_list:
+            logging.info("save task!")
             # get final start and end time for scheduled blocks
-            task = ndb.Key(urlsafe = task_item['task_key']).get()
+            task = ndb.Key(urlsafe = task_item['fullcalendar_id']).get()
             start = datetime.strptime(task_item['start'], '%Y-%m-%dT%H:%M:%S.%fZ')
             end = datetime.strptime(task_item['end'], '%Y-%m-%dT%H:%M:%S.%fZ')
 
@@ -355,19 +369,27 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
                     },
                 'start':
                     {
-                        'dateTime' : start.isoformat(),
+                        'dateTime' : start.isoformat(), #2015-12-13T10:00:00-05:00
                         'timeZone': timezone
                     },
                 'summary': task.name + 'prepare'
             }
-
             data_json = json.dumps(data)
 
-            # Call the service using the authorized Http object.
-            eventsResult = calendar_service.events().insert(
-                calendarId='primary', body=data ).execute(http=http)
-            events = eventsResult.get('items', [])
+            task_event_id = Task.query(Task.event_ID == task_item['fullcalendar_id']).fetch()
+            # if fullcalendar_id is in task.event_ID, then we need to update event
+            if len(task_event_id) > 1:
+                eventsResult = calendar_service.events().update(calendarId='primary', eventId=task_event_id[0].event_ID, body=data ).execute(http=http)
 
+            # else create a new event
+            else:
+                eventsResult = calendar_service.events().insert(calendarId='primary', body=data ).execute(http=http)
+                logging.info('len(task.event_ID) = ' + str(len(task.event_ID)))
+                if len(task.event_ID) == 0:
+                    task.event_ID = [eventsResult['id']]
+                else:
+                    task.event_ID.append(eventsResult['id'])
+                task.put()
 
         self.response.out.write(json.dumps(jsonobject))
 
@@ -555,8 +577,8 @@ class CreateList(webapp2.RequestHandler):
             else:
                 self.response.headers['Content-Type'] = 'text/plain'
                 self.response.write('Failed')
-            
-                
+
+
         else:
             new_list = List()
             new_list.name = self.request.get('list_name')

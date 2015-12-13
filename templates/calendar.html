@@ -126,6 +126,7 @@ $(function() { // document ready
     var tasks_to_schedule = [];
     var task_ids_after_schedule = [];
 
+
     $(document).on('click', '#learn_more', function(e) {
         NProgress.start();
         toastr.success('start');
@@ -144,7 +145,7 @@ $(function() { // document ready
             var index = $.inArray(event_object.id, task_ids_after_schedule);
             if(index != -1) {
                 var event_dict = {
-                    'task_key': event_object.id,
+                    'fullcalendar_id': event_object.id,
                     'start': event_object.start,
                     'end': event_object.end
                 };
@@ -311,12 +312,24 @@ $(function() { // document ready
                         function(event) {
                             var events = [];
                             $.each( event.event_list, function(index, element) {
-                                events.push({
-                                    title: element.title,
-                                    start: element.start,
-                                    end: element.end,
-                                    color: '#378006'
-                                });
+                                if(element.is_scheduled === 'on'){
+                                    events.push({
+                                        title: element.title,
+                                        start: element.start,
+                                        end: element.end,
+                                        color: '#ff9800',
+                                        url: element.link
+                                    });
+                                }
+                                else {
+                                    events.push({
+                                        title: element.title,
+                                        start: element.start,
+                                        end: element.end,
+                                        url: element.link,
+                                        color: '#378006'
+                                    });
+                                }
                             });
                             callback(events);
                         }

@@ -4,7 +4,7 @@
     <head>
         <title>ScheduleMyTasks</title>
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-        <script src="/jquery/jquery-1.11.3.js"></script>
+        <script src="/jquery/jquery-1.11.3.min.js"></script>
 
         <!-- jQuery UI -->
         <link rel="stylesheet" href="jquery-ui/jquery-ui.min.css" />
@@ -60,14 +60,14 @@
                     <div id="navbar" class="navbar-collapse collapse">
                         <ul class="nav navbar-nav">
                             <li>
-                                <a href="/calendar">
-                                    <i class="glyphicon glyphicon-calendar"></i>
+                                <a href="/calendar" id="calendar_nav">
+                                    <i class="glyphicon glyphicon-calendar" ></i>
                                     <span>Calendar</span>
                                 </a>
                             </li>
                             <li>
-                                <a href="/manage_lists">
-                                    <i class="glyphicon glyphicon-list-alt"></i>
+                                <a href="/manage_lists" id="list_nav">
+                                    <i class="glyphicon glyphicon-list-alt" ></i>
                                     <span>Lists</span>
                                 </a>
                             </li>
@@ -101,9 +101,14 @@
         <script>
         $(function() { // document ready
             NProgress.configure({ easing: 'ease', speed: 800 });
-
-            NProgress.start();
             NProgress.done(true);
+            var nstart = function() {
+                NProgress.start();
+            };
+            $(document).on('click', '#calendar_nav', nstart);
+            $(document).on('click', '#list_nav', nstart);
+
+
         });
         </script>
 
