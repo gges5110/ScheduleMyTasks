@@ -124,6 +124,7 @@ div.list_container {
 <script>
 $(function() { // document ready
     var tasks_to_schedule = [];
+    var task_ids_after_schedule = [];
 
     $(document).on('click', '#learn_more', function(e) {
         NProgress.start();
@@ -137,11 +138,31 @@ $(function() { // document ready
 
 
     $(document).on('click', '#save_schedule_btn', function(e) {
-        toastr.success('Save!');
+        var tasks_to_save = []
+        var events = $('#calendar').fullCalendar('clientEvents');
+        $.each( events, function(index, event_object) {
+            var index = $.inArray(event_object.id, task_ids_after_schedule);
+            if(index != -1) {
+                var event_dict = {
+                    'task_key': event_object.id,
+                    'start': event_object.start,
+                    'end': event_object.end
+                };
+                tasks_to_save.push(event_dict);
+            }
+        });
+        var myJSON = JSON.stringify({task_list: tasks_to_save});
+        toastr.success('JSON = ' + myJSON);
+        $.ajax({
+            url: '/api/save_to_google_calendar',
+            type: 'POST',
+            data: myJSON,
+            processData: false,
+            contentType: "application/json; charset=UTF-8"
+        });
     });
 
     $(document).on('click', '#schedule_btn', function(e) {
-
         var source = function( start, end, timezone, callback ) {
             $.ajax({
                 url: '/api/schedule',
@@ -176,9 +197,10 @@ $(function() { // document ready
                                 title: element.name,
                                 start: element.start,
                                 end: element.end,
-                                id : element.name + 'schedule',
+                                id : element.task_key,
                                 color: '#f7cac9'
                             });
+                            task_ids_after_schedule.push(element.task_key);
                         }
                     });
                     callback(events);
@@ -204,7 +226,6 @@ $(function() { // document ready
 
     $(document).on('click', '.calendar_off', function(e) {
         var list_key = $(this).attr('id');
-        toastr.success('Take the list off the calendar.');
         //TODO: send AJAX to backend to set on_calendar to False
         var $ajax = $.getJSON('/api/get_list_off_calendar',
             {
@@ -233,7 +254,6 @@ $(function() { // document ready
 
     $(document).on('click', '.calendar_on', function(e) {
         var list_key = $(this).attr('id');
-        toastr.success('Put list on calendar.');
         var source = function( start, end, timezone, callback ) {
             var $ajax = $.getJSON(
                 '/api/put_list_on_calendar',
@@ -320,7 +340,7 @@ $(function() { // document ready
                                 events.push({
                                     title: element.title,
                                     start: element.start,
-                                    id : element.event_ID
+                                    id : element.event_ID + 'view'
                                 });
                             });
                             callback(events);

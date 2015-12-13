@@ -317,10 +317,59 @@ class PutListOnCalendar(webapp2.RequestHandler):
         self.response.out.write(json.dumps(obj))
 
 
+def post_dict(url, json):
+    '''
+    Pass the whole dictionary as a json body to the url.
+    Make sure to use a new Http object each time for thread safety.
+    '''
+    # http = httplib2.Http()
+    # resp, content = http.request(
+    #     uri=url,
+    #     method='POST',
+    #     headers={'Content-Type': 'application/json; charset=UTF-8'},
+    #     body=dumps(json),
+    # )
+
 class SaveToGoogleCalendar(webapp2.RequestHandler):
     @decorator.oauth_required
     def post(self):
-        print self.request.get_all('task_key')
+        jsonstring = self.request.body
+        jsonobject = json.loads(jsonstring)
+        task_list = jsonobject.get('task_list', [])
+        http = decorator.http()
+        # get timezone from usre's Google Calendar settings
+        timezone_response = calendar_service.settings().get(setting='timezone').execute(http=http)
+        timezone = timezone_response.get('value', [])
+
+        for task_item in task_list:
+            # get final start and end time for scheduled blocks
+            task = ndb.Key(urlsafe = task_item['task_key']).get()
+            start = datetime.strptime(task_item['start'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            end = datetime.strptime(task_item['end'], '%Y-%m-%dT%H:%M:%S.%fZ')
+
+            data = {
+                'end':
+                    {
+                        'dateTime' : end.isoformat(),
+                        'timeZone': timezone
+                    },
+                'start':
+                    {
+                        'dateTime' : start.isoformat(),
+                        'timeZone': timezone
+                    },
+                'summary': task.name + 'prepare'
+            }
+
+            data_json = json.dumps(data)
+
+            # Call the service using the authorized Http object.
+            eventsResult = calendar_service.events().insert(
+                calendarId='primary', body=data ).execute(http=http)
+            events = eventsResult.get('items', [])
+
+
+        self.response.out.write(json.dumps(jsonobject))
 
 
 
