@@ -237,6 +237,28 @@ class Busy:
         self.start = datetime.strptime(start_, '%Y-%m-%dT%H:%M:%S')
         self.end = datetime.strptime(end_, '%Y-%m-%dT%H:%M:%S')
 
+class ScheduleEvent:
+    def __init__(self, start, end, task_id):
+        self.start = start
+        self.end = end
+        self.task_id = task_id
+    def toString(self):
+        return ('Scheduled ' + self.task_id + ' from ' + self.start.isoformat() + ' to ' + self.end.isoformat())
+
+class Task2Schedule:
+    def __init__(self, _due_date, _eft, _id):
+        self.due_date = _due_date
+        self.eft = _eft
+        self.id = _id
+
+    def time_sub(self, b):
+        seconds = self.eft.hour * 3600 + self.eft.minute * 60 - b.hour * 3600 - b. minute * 60
+        hours = seconds // 3600
+        seconds -= hours * 3600
+        minutes = seconds // 60
+        seconds -= minutes * 60
+        return time(hours, minutes, seconds)
+
 class Schedule(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
@@ -247,8 +269,17 @@ class Schedule(webapp2.RequestHandler):
         eventsResult = calendar_service.events().list(calendarId='primary', timeMin=now).execute(http=http)
         events = eventsResult.get('items', [])
         # Construct a list with all busy events
+
+        # Parameters for schedule
         BusyList = []
         schedule_list = []
+        small = time(2, 0, 0)
+        day_start = time(8, 0, 0)
+        day_end = time(22, 00, 00)
+        increment = timedelta(seconds=1800)
+
+        now = datetime.strptime('2015-12-22T08:00:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ')
+
         for event in events:
             # Choose status with confirmed
             if 'status' in event and event['status'] == 'confirmed':
@@ -260,7 +291,6 @@ class Schedule(webapp2.RequestHandler):
         fullcalendar_ids = self.request.get_all('fullcalendar_id')
         logging.info('fullcalendar_ids = ' + str(fullcalendar_ids))
         for fullcalendar_id in fullcalendar_ids:
-
             # check if fullcalendar_id is in event_ID, if so it is already scheduled, update the color to pink
             task_event_id = Task.query(Task.event_ID == fullcalendar_id).fetch()
             if len(task_event_id) > 0:
@@ -271,30 +301,57 @@ class Schedule(webapp2.RequestHandler):
 
             # else it must be a task key, it is not yet scheduled
             else:
-                task_key = ndb.Key(urlsafe = fullcalendar_id)
-                task = task_key.get()
-                end = task.due_date
-                start = end - timedelta(seconds = task.estimated_finish_time.hour*3600 + task.estimated_finish_time.minute*60)
-                conflict = False
-                for busy in BusyList:
-                    if busy.start < start < busy.end or busy.start < end < busy.end:
-                        conflict = True
-                        break
+                task = ndb.Key(urlsafe = fullcalendar_id).get()
+                task_to_schedule = Task2Schedule(task.due_date, task.estimated_finish_time, 'task')
+                # partition the task if it is too long
+                partitioned_list = []
+                schedule_temp_list = []
+                while task_to_schedule.eft > small:
+                    partitioned_list.append(Task2Schedule(task_to_schedule.due_date, small, task_to_schedule.id))
+                    task_to_schedule = Task2Schedule(task_to_schedule.due_date, task_to_schedule.time_sub(small), task_to_schedule.id)
+                partitioned_list.append(task_to_schedule)
 
-                schedule_dict = dict()
-                if conflict == True:
-                    # Reschedule
-                    schedule_dict['status'] = 'conflict'
-                    print 'Reschedule this event!'
-                else:
+                for tasks in partitioned_list:
+                    # temp schedule for task
+                    temp_start = now
+                    temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.second*60)
+                    print temp_end
+                    for busy in BusyList:
+                        while busy.start <= temp_start < busy.end \
+                            or busy.start < temp_end <= busy.end \
+                            or (temp_start <= busy.start and busy.end <= temp_end) \
+                            or temp_start.time() < day_start \
+                            or temp_end.time() >= day_end \
+                            or temp_end.time() < day_start:
+                            temp_start += increment
+                            temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.second*60)
+
+                    logging.info('temp start = ' + temp_start.isoformat() + ', end = ' + temp_end.isoformat())
+                    logging.info('busy start = ' + busy.start.isoformat() + ', end = ' + busy.end.isoformat())
+                    BusyList.append(Busy(temp_start.isoformat(), temp_end.isoformat()))
+                    BusyList = sorted(BusyList, key=lambda _busy: _busy.start)
+                    # append result to schedule list
+                    schedule_temp = ScheduleEvent(temp_start, temp_end, tasks.id)
+                    schedule_temp_list.append(schedule_temp)
+
+                # end = task.due_date
+                # start = end - timedelta(seconds = task.estimated_finish_time.hour*3600 + task.estimated_finish_time.minute*60)
+                # conflict = False
+                # for busy in BusyList:
+                #     if busy.start < start < busy.end or busy.start < end < busy.end:
+                #         conflict = True
+                #         break
+                for schedule_event in schedule_temp_list:
+                    schedule_dict = dict()
                     schedule_dict['status'] = 'confirmed'
-                    schedule_dict['start'] = start.isoformat()
-                    schedule_dict['end'] = end.isoformat()
+                    logging.info('schedule_event = ' + schedule_event.toString())
+                    schedule_dict['start'] = schedule_event.start.isoformat()
+                    schedule_dict['end'] = schedule_event.end.isoformat()
 
-                schedule_dict['name'] = task.name
-                schedule_dict['task_key'] = task_key.urlsafe()
-                schedule_dict['list_key'] = task.list_key.urlsafe()
-                schedule_list.append(schedule_dict)
+                    schedule_dict['name'] = task.name
+                    schedule_dict['task_key'] = task.key.urlsafe()
+                    schedule_dict['list_key'] = task.list_key.urlsafe()
+                    schedule_list.append(schedule_dict)
 
         obj = dict()
         obj['schedule_list'] = schedule_list
@@ -619,7 +676,7 @@ class CreateList(webapp2.RequestHandler):
                             self.response.write('Failed')
                             break
                 list.put()
-                    
+
                 self.response.headers['Content-Type'] = 'text/plain'
                 self.response.write('Edited')
             else:

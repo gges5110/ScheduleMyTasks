@@ -93,13 +93,18 @@ div.list_container {
                                                            <label for="{{ loop.index }}">
                                                                {% if task.event_ID|length > 0 %}
                                                                <input type="checkbox" id="{{ task.key.urlsafe() }}" class="schedule_checkbox" checked="checked">
-                                                               <script>
+                                                               <script>                                                                
                                                                 {% for task_event_id in task.event_ID %}
                                                                     tasks_to_schedule.push('{{task_event_id}}');
                                                                 {% endfor %}
                                                                </script>
                                                                {% else %}
                                                                <input type="checkbox" id="{{ task.key.urlsafe() }}" class="schedule_checkbox">
+                                                               <script>
+                                                               {% if not task.due_date or not task.estimated_finish_time %}
+                                                                   $(".schedule_checkbox#{{ task.key.urlsafe() }}").prop("disabled", true);
+                                                               {% endif %}
+                                                               </script>
                                                                {% endif %}
                                                            </label>
                                                        </div>
