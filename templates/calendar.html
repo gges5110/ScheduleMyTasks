@@ -4,7 +4,7 @@
 body {
   padding: 0;
   font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 span.list_name_span {
@@ -93,7 +93,7 @@ div.list_container {
                                                            <label for="{{ loop.index }}">
                                                                {% if task.event_ID|length > 0 %}
                                                                <input type="checkbox" id="{{ task.key.urlsafe() }}" class="schedule_checkbox" checked="checked">
-                                                               <script>                                                                
+                                                               <script>
                                                                 {% for task_event_id in task.event_ID %}
                                                                     tasks_to_schedule.push('{{task_event_id}}');
                                                                 {% endfor %}
@@ -137,6 +137,9 @@ div.list_container {
         <div class="push"></div>
     </div>
 </div>
+
+
+
 
 <script>
 var task_ids_after_schedule = [];
@@ -280,7 +283,24 @@ $(function() { // document ready
           center: 'title',
           right: 'month,agendaWeek,agendaDay'
         },
-        defaultDate: '2015-12-12',
+        eventRender: function (event, element) {
+            element.attr('href', 'javascript:void(0);');
+            element.click(function() {
+                $("#startTime").html(moment(event.start).format('MMM Do h:mm A'));
+                $("#endTime").html(moment(event.end).format('MMM Do h:mm A'));
+                $('#modalTitle').html(event.title);
+                $('#modalBody').html(event.description);
+                $('#eventUrl').attr('href',event.url);
+                $('#fullCalModal').modal();
+
+                // $("#startTime").html(moment(event.start).format('MMM Do h:mm A'));
+                // $("#endTime").html(moment(event.end).format('MMM Do h:mm A'));
+                // $("#eventInfo").html(event.description);
+                // $("#eventLink").attr('href', event.url);
+                // $("#eventContent").dialog({ modal: true, title: event.title, width:350});
+            });
+        },
+        defaultDate: '2015-12-14',
         editable: true,
         eventLimit: true, // allow "more" link when too many events
         eventSources: [
@@ -417,5 +437,24 @@ $(function() { // document ready
 
 });
 </script>
+
+<div id="fullCalModal" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span> <span class="sr-only">close</span></button>
+                <h4 id="modalTitle" class="modal-title"></h4>
+            </div>
+            <div id="modalBody" class="modal-body">
+                Start: <span id="startTime"></span><br>
+                End: <span id="endTime"></span><br><br>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button class="btn btn-default"><a id="eventUrl" target="_blank">Event Page</a></button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
