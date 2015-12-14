@@ -458,7 +458,7 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
                         'dateTime' : start.isoformat(), #2015-12-13T10:00:00-05:00
                         'timeZone': timezone
                     },
-                'summary': task_name + 'prepare'
+                'summary': task_name + ' scheduled.'
             }
             data_json = json.dumps(data)
             update_schedule_dict = dict()
@@ -534,7 +534,7 @@ class SyncGoogleCalendarToList(webapp2.RequestHandler):
                             due_date = datetime.strptime(event['start'].get('date'), '%Y-%m-%d')
                             if due_time:
                                 due_time = datetime.strptime(due_time, '%I:%M%p')
-                                due_date = due_date.replace(hour=due_time.hour, minute=due_time.minute) 
+                                due_date = due_date.replace(hour=due_time.hour, minute=due_time.minute)
                             else:
                                 due_date = due_date.replace(hour = 23, minute = 59)
 
@@ -554,7 +554,7 @@ class SyncGoogleCalendarToList(webapp2.RequestHandler):
                             # existing list but no existing task
                             new_task = Task()
                             if list_name in map(lambda x:x['list_name'], new_lists):
-                                new_task.list_key = new_lists[next(index for (index, d) in enumerate(lst) if d["name"] == "Tom")].get('list_key')
+                                new_task.list_key = ndb.Key(urlsafe=new_lists[next(index for (index, d) in enumerate(new_lists) if d["list_name"] == list_name)].get('list_key'))
                             else:
                                 new_task.list_key = new_list.key
                             new_task.name = task_name
