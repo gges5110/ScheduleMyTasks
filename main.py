@@ -715,6 +715,14 @@ class DeleteList(webapp2.RequestHandler):
         if self.request.get('list_key'):
             list_key = ndb.Key(urlsafe = self.request.get('list_key'))
             for task in Task.query(Task.list_key == list_key):
+                for scheduled in task.event_ID:
+                    event = calendar_service.events().get(calendarId='primary', eventId=scheduled).execute(http = decorator.http())
+                    if not 'error' in event and not event['status'] == 'cancelled':
+                        eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task.due_date_event_ID).execute(http = decorator.http())
+                        if 'error' in eventsResult:
+                            self.response.headers['Content-Type'] = 'text/plain'
+                            self.response.write('Failed')
+                            return
                 if self.request.get('delete_calendar') == 'on' and task.due_date_event_ID:
                     event = calendar_service.events().get(calendarId='primary', eventId=task_key.get().due_date_event_ID).execute(http = decorator.http())
                     if not 'error' in event and not event['status'] == 'cancelled':
@@ -854,6 +862,14 @@ class DeleteTask(webapp2.RequestHandler):
     def post(self):
         if self.request.get('task_key'):
             task_key = ndb.Key(urlsafe = self.request.get('task_key'))
+            for scheduled in task_key.get().event_ID:
+                event = calendar_service.events().get(calendarId='primary', eventId=scheduled).execute(http = decorator.http())
+                if not 'error' in event and not event['status'] == 'cancelled':
+                    eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task.due_date_event_ID).execute(http = decorator.http())
+                    if 'error' in eventsResult:
+                        self.response.headers['Content-Type'] = 'text/plain'
+                        self.response.write('Failed')
+                        return
             if self.request.get('delete_calendar') == 'on' and task_key.get().due_date_event_ID:
                 event = calendar_service.events().get(calendarId='primary', eventId=task_key.get().due_date_event_ID).execute(http = decorator.http())
                 logging.info(event)
