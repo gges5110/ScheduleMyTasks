@@ -541,8 +541,12 @@ class SyncGoogleCalendarToList(webapp2.RequestHandler):
                     list = List.query(List.name == list_name).fetch()
                     if len(list) or list_name in map(lambda x:x['list_name'], new_lists):
                         # add task to existing list
-                        new_list = list[0]
-                        tasks = Task.query(ndb.AND(Task.list_key == new_list.key, ndb.OR(Task.name == task_name, Task.due_date_event_ID == event['id']))).fetch()
+                        if len(list):
+                            new_list_key = list[0].key
+                        else:
+                            new_list_key = ndb.Key(urlsafe=new_lists[next(index for (index, d) in enumerate(new_lists) if d["list_name"] == list_name)].get('list_key'))
+
+                        tasks = Task.query(ndb.AND(Task.list_key == new_list_key, ndb.OR(Task.name == task_name, Task.due_date_event_ID == event['id']))).fetch()
                         if len(tasks):
                             # existing list and task
                             task = tasks[0]
@@ -553,10 +557,7 @@ class SyncGoogleCalendarToList(webapp2.RequestHandler):
                         else:
                             # existing list but no existing task
                             new_task = Task()
-                            if list_name in map(lambda x:x['list_name'], new_lists):
-                                new_task.list_key = ndb.Key(urlsafe=new_lists[next(index for (index, d) in enumerate(new_lists) if d["list_name"] == list_name)].get('list_key'))
-                            else:
-                                new_task.list_key = new_list.key
+                            new_task.list_key = new_list_key
                             new_task.name = task_name
                             new_task.due_date = due_date
                             new_task.due_date_event_ID = event['id']
