@@ -713,7 +713,7 @@ class CreateTask(webapp2.RequestHandler):
                                 'date' : task.due_date.strftime("%Y-%m-%d"),
                                 'timeZone': timezone
                             },
-                        'summary': "#" + task.list_key.get().name + " - " + task.name + " " + task.due_date.strftime("%I:%M%p")
+                        'summary': "# " + task.list_key.get().name + " - " + task.name + " " + task.due_date.strftime("%I:%M%p")
                     }
                     eventsResult = calendar_service.events().insert(calendarId='primary', body= data).execute(http = decorator.http())
 
@@ -757,7 +757,7 @@ class DeleteTask(webapp2.RequestHandler):
     def post(self):
         if self.request.get('task_key'):
             task_key = ndb.Key(urlsafe = self.request.get('task_key'))
-            if task_key.get().due_date_event_ID:
+            if self.request.get('delete_calendar') == 'on' and task_key.get().due_date_event_ID:
                 eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task_key.get().due_date_event_ID).execute(http = decorator.http())
             task_key.delete()
             self.response.headers['Content-Type'] = 'text/plain'

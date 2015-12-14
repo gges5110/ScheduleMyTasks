@@ -252,12 +252,7 @@ $(document).ready(function() {
         }
     });
 
-    $(document).on('click', '.modal_button_delete_task', function(event) {
-        toastr.info('Deleting task...');
-        var task_key = $('#delete_task_id').val();
-        var res = 'task_key=' + task_key;
-        // toastr.success('Task deleting!');
-        //event.preventDefault();
+    function deleteTask(task_key, res){
         $.ajax({
             type: 'POST',
             url: 'api/delete_task',
@@ -282,6 +277,21 @@ $(document).ready(function() {
                 }
             }
         });
+    }
+
+    $(document).on('click', '.modal_button_delete_task_delete_calendar', function(event) {
+        toastr.info('Deleting task...');
+        var task_key = $('#delete_task_id').val();
+        var res = 'task_key=' + task_key;
+        res += '&delete_calendar=on';
+        deleteTask(task_key, res);
+    });
+
+    $(document).on('click', '.modal_button_delete_task', function(event) {
+        toastr.info('Deleting task...');
+        var task_key = $('#delete_task_id').val();
+        var res = 'task_key=' + task_key;
+        deleteTask(task_key, res);
     });
 
     $(document).on('click', '.delete_task', function(event) {
@@ -401,11 +411,12 @@ $(document).ready(function() {
           <h4 class="modal-title" id="delete_task_title">Modal Header</h4>
         </div>
         <div class="modal-body">
-            Are you sure you want to delete?
+            Would you like to delete the task on Google Calendar?
         </div>
         <div class="modal-footer">
           <input type="hidden" id="delete_task_id">
-          <button type="button" class="btn btn-danger modal_button_delete_task" data-dismiss="modal">Delete</button>
+          <button type="button" class="btn btn-danger modal_button_delete_task_delete_calendar" data-dismiss="modal">Yes</button>
+          <button type="button" class="btn btn-primary modal_button_delete_task" data-dismiss="modal">No</button>
         </div>
       </div>
     </div>
@@ -468,7 +479,6 @@ $(document).ready(function() {
             </div>
         </div>
         <div class="modal-footer">
-          <input type="hidden" id="delete_task_id">
           <button type="button" class="btn btn-primary modal_button_create_task" data-dismiss="modal">Create</button>
         </div>
       </div>
