@@ -56,7 +56,7 @@ div.panel-heading {
     							<th>Done</th>
     							<th>Name</th>
     							<th>Due Date</th>
-    							<th>Remain</th>
+    							<th>Remaining Time</th>
     							<th>Delete</th>
     						</tr>
     					</thead>
@@ -68,15 +68,7 @@ div.panel-heading {
     							<td class="task_name_column"><a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
                                 {{ task.name }}</a></td>
     							<td class="task_due_date_column">{% if task.due_date %} {{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }} {% endif %}</td>
-    							<td class="task_eft_column col-md-4">{% if task.estimated_finish_time %} 
-                                    <div class="progress text-right">
-                                      <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40"
-                                      aria-valuemin="0" aria-valuemax="100" style="width:40%">
-                                      40% Complete
-                                      </div>
-                                      60% Remaining
-                                    </div>
-                                {% endif %}</td>
+    							<td class="task_eft_column"></td>
     							<td><a href="#" data-toggle="modal" data-target="#delete_task_modal" class="list_modal delete_task" id="{{ task.key.urlsafe() }}">
                                     <i class="glyphicon glyphicon-remove"></i>
                                 </a></td>
@@ -130,6 +122,21 @@ $(document).ready(function() {
         });
         
     }
+
+    function getRemainingTime(){
+        $.getJSON(
+            '/api/get_remaining_time?list_key={{ list.key.urlsafe() }}',
+            function(json) {
+                var events = [];
+                $.each( json.remaining_time_list, function(index, element) {
+                    $('#' + element.task_key).children('.task_eft_column').text(element.remaining_time);
+                });
+            }
+        );
+    }
+
+    getRemainingTime();
+
     NProgress.done(true);
 
     var create_dialog, edit_dialog, list_name, list_key;
@@ -251,6 +258,18 @@ $(document).ready(function() {
                   $('#'+task_id).children('.task_name_column').children('.edit_task').text(task_name);
                   $('#'+task_id).children('.task_eft_column').text(eft);
                   $('#'+task_id).children('.task_due_date_column').text(due_date);
+                    //$.getJSON(
+                    //    '/api/get_remaining_time?list_key={{ list.key.urlsafe() }}',
+                    //    function(json) {
+                    //        toastr.success('hi');
+                    //        var events = [];
+                    //        $.each( json.remaining_time_list, function(index, element) {
+                    //            var elem = $('#' + element.task_key).children('.task_eft_column');
+                    //            console.log(elem.text());
+                    //            $('#' + element.task_key).children('.task_eft_column').text(element.remaining_time);
+                    //        });
+                    //    }
+                    //);
                   $(".tasks_table_body").trigger('update');
                   toastr.success('Task edited');
               }
