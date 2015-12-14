@@ -67,15 +67,7 @@ div.list_container {
                                             <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
                                             {{ list['name'] }}
                                         </a>
-                                        <div class="pull-right">
-                                            {% if not list['on_calendar'] %}
-                                            <button class="btn btn-success calendar_on" id="{{ list['key'] }}">On</button>
-                                            <button class="btn btn-danger calendar_off" disabled id="{{ list['key'] }}">Off</button>
-                                            {% else %}
-                                            <button class="btn btn-success calendar_on" disabled id="{{ list['key'] }}">On</button>
-                                            <button class="btn btn-danger calendar_off" id="{{ list['key'] }}">Off</button>
-                                            {% endif %}
-                                        </div>
+
                                     </div>
 
                                     <div id="collapse{{ loop.index }}" class="accordion-body collapse">
@@ -131,28 +123,21 @@ div.list_container {
         <div class="panel-footer clearfix">
             <div class="pull-right">
                 <a href="#" class="btn btn-primary" id="learn_more">Learn More</a>
-                <a href="#" class="btn btn-default" id="go_back">Go Back</a>
+                <!-- <a href="#" class="btn btn-default" id="go_back">Go Back</a> -->
             </div>
         </div>
         <div class="push"></div>
     </div>
 </div>
 
-
-
-
 <script>
 var task_ids_after_schedule = [];
 $(function() { // document ready
 
     $(document).on('click', '#learn_more', function(e) {
-        NProgress.start();
-        toastr.success('start');
     });
 
     $(document).on('click', '#go_back', function(e) {
-        NProgress.done(true);
-        toastr.success('done');
     });
 
     $(document).on('click', '#schedule_btn', function(e) {
@@ -226,7 +211,7 @@ $(function() { // document ready
             console.log('event_object.id = ' + event_object.id);
             var index = $.inArray(event_object.id, task_ids_after_schedule);
             if(index != -1) {
-                toastr.success('Saving one event with id = ' + event_object.id);
+                console.log('event_object.end = ' + event_object.end);
                 var event_dict = {
                     'fullcalendar_id': event_object.id,
                     'start': event_object.start,
@@ -257,7 +242,6 @@ $(function() { // document ready
                     }
                     event_object_list[0].color = '#ff9800';
                     $('#calendar').fullCalendar('updateEvent', event_object_list[0]);
-
                 });
             }
         });
@@ -292,12 +276,6 @@ $(function() { // document ready
                 $('#modalBody').html(event.description);
                 $('#eventUrl').attr('href',event.url);
                 $('#fullCalModal').modal();
-
-                // $("#startTime").html(moment(event.start).format('MMM Do h:mm A'));
-                // $("#endTime").html(moment(event.end).format('MMM Do h:mm A'));
-                // $("#eventInfo").html(event.description);
-                // $("#eventLink").attr('href', event.url);
-                // $("#eventContent").dialog({ modal: true, title: event.title, width:350});
             });
         },
         defaultDate: '2015-12-14',

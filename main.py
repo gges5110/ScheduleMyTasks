@@ -278,7 +278,7 @@ class Schedule(webapp2.RequestHandler):
         day_end = time(22, 00, 00)
         increment = timedelta(seconds=1800)
 
-        now = datetime.strptime('2015-12-22T08:00:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ')
+        now = datetime.strptime('2015-12-21T08:00:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ')
 
         for event in events:
             # Choose status with confirmed
@@ -341,7 +341,7 @@ class Schedule(webapp2.RequestHandler):
                 #     if busy.start < start < busy.end or busy.start < end < busy.end:
                 #         conflict = True
                 #         break
-                for schedule_event in schedule_temp_list:
+                for i, schedule_event in enumerate(schedule_temp_list):
                     schedule_dict = dict()
                     schedule_dict['status'] = 'confirmed'
                     logging.info('schedule_event = ' + schedule_event.toString())
@@ -349,7 +349,7 @@ class Schedule(webapp2.RequestHandler):
                     schedule_dict['end'] = schedule_event.end.isoformat()
 
                     schedule_dict['name'] = task.name
-                    schedule_dict['task_key'] = task.key.urlsafe()
+                    schedule_dict['task_key'] = task.key.urlsafe() + ':' + str(i)
                     schedule_dict['list_key'] = task.list_key.urlsafe()
                     schedule_list.append(schedule_dict)
 
@@ -432,20 +432,20 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
         timezone = timezone_response.get('value', [])
         update_schedule = []
         for task_item in task_list:
-            task_event_id = Task.query(Task.event_ID == task_item['fullcalendar_id']).fetch()
             task = None
-            if len(task_event_id) > 0:
-                # if fullcalendar_id is in task.event_ID, then we need to update event
-                task_name = task_event_id[0].name
-            else:
-                # else create a new event
-                logging.info('task_item[fullcalendar_id] = ' + task_item['fullcalendar_id'])
-                task = ndb.Key(urlsafe = task_item['fullcalendar_id']).get()
+            if ':' in task_item['fullcalendar_id']:
+                # new created event
+                task = ndb.Key(urlsafe=task_item['fullcalendar_id'].split(':')[0]).get()
                 task_name = task.name
+            else:
+                # else fullcalendar_id is in task.event_ID, then we need to update event
+                task_event_id = Task.query(Task.event_ID == task_item['fullcalendar_id']).fetch()
+                task_name = task_event_id[0].name
 
             # get final start and end time for scheduled blocks
             start = datetime.strptime(task_item['start'], '%Y-%m-%dT%H:%M:%S.%fZ')
             end = datetime.strptime(task_item['end'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            logging.info('task_item[end] = ' + task_item['end'])
 
             data = {
                 'end':
@@ -462,16 +462,12 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
             }
             data_json = json.dumps(data)
             update_schedule_dict = dict()
-            if len(task_event_id) > 0:
-                logging.info('updating ' + str(task_item['fullcalendar_id']))
-                eventsResult = calendar_service.events().update(calendarId='primary', eventId=task_item['fullcalendar_id'], body=data).execute(http=http)
-                update_schedule_dict['event_id'] = task_item['fullcalendar_id']
-                update_schedule_dict['status'] = 'old_schedule'
-            else:
+
+            if ':' in task_item['fullcalendar_id']:
                 eventsResult = calendar_service.events().insert(calendarId='primary', body= data).execute(http=http)
                 logging.info('creating ' + str(task_item['fullcalendar_id']))
                 update_schedule_dict['event_id'] = eventsResult['id']
-                update_schedule_dict['task_key'] = task.key.urlsafe()
+                update_schedule_dict['task_key'] = task_item['fullcalendar_id']
                 update_schedule_dict['status'] = 'new_created_schedule'
                 if len(task.event_ID) == 0:
                     task.event_ID = [eventsResult['id']]
@@ -479,6 +475,12 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
                     # task has other scheduled block
                     task.event_ID.append(eventsResult['id'])
                 task.put()
+            else:
+                logging.info('updating ' + str(task_item['fullcalendar_id']))
+                eventsResult = calendar_service.events().update(calendarId='primary', eventId=task_item['fullcalendar_id'], body=data).execute(http=http)
+                update_schedule_dict['event_id'] = task_item['fullcalendar_id']
+                update_schedule_dict['status'] = 'old_schedule'
+
             update_schedule.append(update_schedule_dict)
 
         obj = dict()
