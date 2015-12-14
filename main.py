@@ -584,6 +584,12 @@ class TotalTimeForList(webapp2.RequestHandler):
 class CreateList(webapp2.RequestHandler):
     @decorator.oauth_required
     def post(self):
+        list_name = self.request.get('list_name')
+        lists = List.query(List.name == list_name).fetch()
+        if len(lists) > 0:
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Repeated')
+            return
         current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
         logging.info("Call create")
         if self.request.get('list_key'):
@@ -626,6 +632,12 @@ class DeleteList(webapp2.RequestHandler):
         if self.request.get('list_key'):
             list_key = ndb.Key(urlsafe = self.request.get('list_key'))
             for task in Task.query(Task.list_key == list_key):
+                if self.request.get('delete_calendar') == 'on' and task.due_date_event_ID:
+                    eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task.due_date_event_ID).execute(http = decorator.http())
+                    if 'error' in eventsResult:
+                        self.response.headers['Content-Type'] = 'text/plain'
+                        self.response.write('Failed')
+                        return
                 task.key.delete()
             list_key.delete()
             self.response.headers['Content-Type'] = 'text/plain'
@@ -759,6 +771,10 @@ class DeleteTask(webapp2.RequestHandler):
             task_key = ndb.Key(urlsafe = self.request.get('task_key'))
             if self.request.get('delete_calendar') == 'on' and task_key.get().due_date_event_ID:
                 eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task_key.get().due_date_event_ID).execute(http = decorator.http())
+                if 'error' in eventsResult:
+                    self.response.headers['Content-Type'] = 'text/plain'
+                    self.response.write('Failed')
+                    return
             task_key.delete()
             self.response.headers['Content-Type'] = 'text/plain'
             self.response.write('Success')

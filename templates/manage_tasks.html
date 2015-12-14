@@ -322,6 +322,9 @@ $(document).ready(function() {
                         list_name = new_list_name;
                         toastr.success('List edited!');
                     }
+                    else if (msg === 'Repeated') {
+                        toastr.error('List \"' + new_list_name + '\" already exists!');
+                    }
                 }
             });
         }
@@ -338,9 +341,7 @@ $(document).ready(function() {
         $('#delete_list_id').val(list_key);
     });
 
-    $(document).on('click', '.modal_button_delete_list', function(event) {
-        toastr.info('Deleting list...');
-        var res = 'list_key=' + list_key;
+    function deleteList(res){
         //event.preventDefault();
         $.ajax({
             type: 'POST',
@@ -357,6 +358,19 @@ $(document).ready(function() {
                 }
             }
         });
+    }
+
+    $(document).on('click', '.modal_button_delete_list_delete_calendar', function(event) {
+        toastr.info('Deleting list...');
+        var res = 'list_key=' + list_key;
+        res += '&delete_calendar=on';
+        deleteList(res);
+    });
+
+    $(document).on('click', '.modal_button_delete_list', function(event) {
+        toastr.info('Deleting list...');
+        var res = 'list_key=' + list_key;
+        deleteList(res);
     });
 });
 </script>
@@ -391,11 +405,12 @@ $(document).ready(function() {
           <h4 class="modal-title" id="delete_list_title">Modal Header</h4>
         </div>
         <div class="modal-body">
-            Are you sure you want to delete?
+            Would you like to delete the tasks on Google Calendar?
         </div>
         <div class="modal-footer">
           <input type="hidden" id="delete_list_id">
-          <button type="button" class="btn btn-danger modal_button_delete_list" data-dismiss="modal">Delete</button>
+          <button type="button" class="btn btn-danger modal_button_delete_list_delete_calendar" data-dismiss="modal">Yes</button>
+          <button type="button" class="btn btn-primary modal_button_delete_list" data-dismiss="modal">No</button>
         </div>
       </div>
     </div>

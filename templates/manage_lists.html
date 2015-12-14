@@ -128,8 +128,11 @@ $(document).ready(function() {
                 url: 'api/create_list',
                 data: res,
                 success: function(msg) {
-                    console.log(msg)
-                    if (msg != 'Failed' && msg != 'Edited') {
+                    console.log(msg);
+                    if (msg === 'Repeated') {
+                        toastr.error('List \"' + list_name + '\" already exists!');
+                    }
+                    else if (msg != 'Failed' && msg != 'Edited') {
                         // append new list
                         toastr.success('List created!');
 
