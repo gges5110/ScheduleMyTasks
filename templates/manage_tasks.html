@@ -57,8 +57,8 @@ div.panel-heading {
     							<td class="task_done_column"><input type=checkbox id="task_done_checkbox" {% if task.done %}checked{% endif %}></td>
     							<td class="task_name_column"><a href="#" data-toggle="modal" data-target="#create_task_modal" class="list_modal edit_task">
                                 {{ task.name }}</a></td>
-    							<td class="task_due_date_column">{{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }}</td>
-    							<td class="task_eft_column">{{ task.estimated_finish_time.isoformat()[0:5] }}</td>
+    							<td class="task_due_date_column">{% if task.due_date %} {{ task.due_date.strftime("%m/%d/%Y %I:%M %p") }} {% endif %}</td>
+    							<td class="task_eft_column">{% if task.estimated_finish_time %} {{ task.estimated_finish_time.isoformat()[0:5] }} {% endif %}</td>
     							<td><a href="#" data-toggle="modal" data-target="#delete_task_modal" class="list_modal delete_task" id="{{ task.key.urlsafe() }}">
                                     <i class="glyphicon glyphicon-remove"></i>
                                 </a></td>
@@ -195,13 +195,10 @@ $(document).ready(function() {
         if(task_name === "") {
             toastr.warning('Task name must be filled!');
         }
-        else if(due_date === "") {
-            toastr.warning('Due date must be filled!');
-        }
-        else if(eft === "") {
-            toastr.warning('Estimated finish time must be filled!');
-        }
         else {
+            if(eft === null) {
+                eft = "";
+            }
             if(task_id)
                 toastr.info("Editing task...");
             else
@@ -248,6 +245,9 @@ $(document).ready(function() {
                     $('.empty_list_tile').children('.jumbotron').remove();
                   }
               }
+              else if (msg == 'Failed'){
+                  toastr.error('Error!');
+              }
             }
         }
     });
@@ -276,6 +276,9 @@ $(document).ready(function() {
                       strVar += "<\/div>";
                       $('.empty_list_tile').append(strVar);
                     }
+                }
+                else{
+                    toastr.error('Error!');
                 }
             }
         });

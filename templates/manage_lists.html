@@ -73,17 +73,42 @@ $(document).ready(function() {
         }
     );
 
+    function newRow(list_key, list_name){
+        var strVar="";
+        strVar += "<tr class=\"lists_table\" id=\"" + list_key + "\">";
+        strVar += "    <td><a href=\"\/manage_tasks?list_key=" + list_key + "\">" + list_name +"<\/a><\/td>";
+        strVar += "    <td class=\"next_item_column\" id=\"" + list_key + "\"><\/td>";
+        strVar += "<\/tr>";
+        return strVar;
+    }
+
     $(document).on('click', "#sync_list_btn",function(e) {
         toastr.info('Syncing...');
         $.ajax({
             type: 'GET',
             url: 'api/sync_google_calendar_to_list',
-            success: function(msg) {
-                console.log(msg)
-                if (msg != 'Failed') {
-                    // append new list
-                    toastr.success('Sync complete!');
+            success: function(event) {
+                var oldSize = document.getElementById('manage_table').rows.length;
+                $.each(event.new_lists, function(index, element){
+                    $(".lists_table_body").append(newRow(element.list_key, element.list_name));
+                });
+
+                $.getJSON(
+                    '/api/next_item_in_list',
+                    function(json) {
+                        var events = [];
+                        $.each( json.list, function(index, element) {
+                            $('.next_item_column#' + element.list_key).text('\"' + element.task_name + '\" on ' + element.due_date);
+                        });
+                    }
+                );
+
+                if(oldSize < 2){
+                  //console.log("removing empty list tile");
+                  $('.empty_list_tile').children('.jumbotron').remove();
                 }
+
+                toastr.success('Sync complete!');
             }
         });
     });
@@ -106,14 +131,9 @@ $(document).ready(function() {
                     console.log(msg)
                     if (msg != 'Failed' && msg != 'Edited') {
                         // append new list
-                        toastr.success(name + 'List created!');
-                        var strVar="";
-                        strVar += "<tr class=\"lists_table\" id=\"" + msg + "\">";
-                        strVar += "    <td><a href=\"\/manage_tasks?list_key=" + msg + "\">" + list_name +"<\/a><\/td>";
-                        strVar += "    <td class=\"next_item_column\" id=\"" + msg + "\"><\/td>";
-                        strVar += "<\/tr>";
+                        toastr.success('List created!');
 
-                        $(".lists_table_body").append(strVar);
+                        $(".lists_table_body").append(newRow(msg, list_name));
                         $('#list_name').val("");
 
                         console.log(document.getElementById('manage_table').rows.length);
