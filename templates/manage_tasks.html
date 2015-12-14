@@ -83,11 +83,6 @@ div.panel-heading {
                         Create Task
                     </button>
                 </div>
-                <div class="col-sm-3">
-                    <button class="btn btn-danger" id="sync_btn">
-                        Sync With Google Calendar
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -174,6 +169,14 @@ $(document).ready(function() {
 
         $('.create_task_title').text('Edit Task');
         $('.modal_button_create_task').text('Save');
+        $(function () {
+            var now = new Date();
+            now.setHours(23);
+            now.setMinutes(59);
+            $('#datetimepicker1').datetimepicker({
+                defaultDate : now
+            });
+        });
     });
 
     $(document).on('click', '.create_task', function(event) {
@@ -185,6 +188,14 @@ $(document).ready(function() {
         $('#eft').val('');
 
         task_id = '';
+        $(function () {
+            var now = new Date();
+            now.setHours(23);
+            now.setMinutes(59);
+            $('#datetimepicker1').datetimepicker({
+                defaultDate : now
+            });
+        });
     });
 
 
@@ -222,6 +233,7 @@ $(document).ready(function() {
                   $('#'+task_id).children('.task_name_column').children('.edit_task').text(task_name);
                   $('#'+task_id).children('.task_eft_column').text(eft);
                   $('#'+task_id).children('.task_due_date_column').text(due_date);
+                  $(".tasks_table_body").trigger('update');
                   toastr.success('Task edited');
               }
               else if (msg != 'Failed') {
@@ -308,7 +320,7 @@ $(document).ready(function() {
             toastr.warning("List Name cannot be empty!");
         }
         else{
-            toastr.info("Editing task...");
+            toastr.info("Editing list...");
             res += "&list_name=" + new_list_name;
             event.preventDefault();
             $.ajax({
@@ -467,16 +479,6 @@ $(document).ready(function() {
                                 <span class="glyphicon glyphicon-calendar"></span>
                             </span>
                         </div>
-                        <script type="text/javascript">
-                            $(function () {
-                                var now = new Date();
-                                now.setHours(23);
-                                now.setMinutes(59);
-                                $('#datetimepicker1').datetimepicker({
-                                    defaultDate : now
-                                });
-                            });
-                        </script>
                     </div>
                 </div>
             </div>
