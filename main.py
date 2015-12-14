@@ -505,42 +505,58 @@ class SyncGoogleCalendarToList(webapp2.RequestHandler):
         for event in events:
             status = ''
             if 'summary' in event:
+                list_name = None
+                due_time = None
+                due_date = None
+                task_name = None
                 title = event['summary']
-                if title[0] == '#':
-                    # add to list
-                    list_name = title[1:].split('-')[0].strip()
-                    if len(title[1:].split('-')) > 1:
-                        task_name = title[1:].split('-')[1].split('@')[0].strip()
-                        if len(title[1:].split('-')[1].split('@')) > 1:
-                            due_date = title[1:].split('-')[1].split('@')[1]
+                pattern = re.compile("^#([^-$\d]*)")
+                m = pattern.search(title)
+                if m:
+                    list_name = m.group(1).strip()
+                    logging.info("list name " + list_name)
+                pattern = re.compile("(?<=-)(?:(?!\d*:)([^$]))*")
+                m = pattern.search(title)
+                if m:
+                    task_name = m.group(0).strip()
+                    logging.info("task name " + task_name)
+                pattern = re.compile("(\s+\d.*)(?=$)")
+                m = pattern.search(title)
+                if m:
+                    due_time = m.group(1).strip()
+                    logging.info("due time " + due_time)
 
+                if task_name:
                     if 'start' in event:
                         if 'dateTime' in event['start']:
-                            start = event['start'].get('dateTime')
-                            # due_date = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S.%fZ')
-                            start_ = start.split('-')
-                            start_ = '-'.join(start_[0:3])
-                            due_date = datetime.strptime(start_, '%Y-%m-%dT%H:%M:%S')
+                            due_date = parseEventTimeFromGoogleCalendar(event['start'].get('dateTime'))
                         else:
-                            start = event['start'].get('date')
-                            due_date = datetime.strptime(start, '%Y-%m-%d')
-                            due_date.replace(hour = 23, minute = 59)
+                            due_date = datetime.strptime(event['start'].get('date'), '%Y-%m-%d')
+                            if due_time:
+                                due_time = datetime.strptime(due_time, '%I:%M%p')
+                                due_date = due_date.replace(hour=due_time.hour, minute=due_time.minute) 
+                            else:
+                                due_date = due_date.replace(hour = 23, minute = 59)
 
                     list = List.query(List.name == list_name).fetch()
-                    if len(list):
+                    if len(list) or list_name in map(lambda x:x['list_name'], new_lists):
                         # add task to existing list
                         new_list = list[0]
-                        tasks = Task.query(ndb.AND(Task.name == task_name, Task.list_key == new_list.key)).fetch()
+                        tasks = Task.query(ndb.AND(Task.list_key == new_list.key, ndb.OR(Task.name == task_name, Task.due_date_event_ID == event['id']))).fetch()
                         if len(tasks):
                             # existing list and task
                             task = tasks[0]
+                            task.name = task_name
                             task.due_date = due_date
                             task.put()
                             status = 'existing list and task'
                         else:
                             # existing list but no existing task
                             new_task = Task()
-                            new_task.list_key = new_list.key
+                            if list_name in map(lambda x:x['list_name'], new_lists):
+                                new_task.list_key = new_lists[next(index for (index, d) in enumerate(lst) if d["name"] == "Tom")].get('list_key')
+                            else:
+                                new_task.list_key = new_list.key
                             new_task.name = task_name
                             new_task.due_date = due_date
                             new_task.due_date_event_ID = event['id']
@@ -699,11 +715,13 @@ class DeleteList(webapp2.RequestHandler):
             list_key = ndb.Key(urlsafe = self.request.get('list_key'))
             for task in Task.query(Task.list_key == list_key):
                 if self.request.get('delete_calendar') == 'on' and task.due_date_event_ID:
-                    eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task.due_date_event_ID).execute(http = decorator.http())
-                    if 'error' in eventsResult:
-                        self.response.headers['Content-Type'] = 'text/plain'
-                        self.response.write('Failed')
-                        return
+                    event = calendar_service.events().get(calendarId='primary', eventId=task_key.get().due_date_event_ID).execute(http = decorator.http())
+                    if not 'error' in event and not event['status'] == 'cancelled':
+                        eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task.due_date_event_ID).execute(http = decorator.http())
+                        if 'error' in eventsResult:
+                            self.response.headers['Content-Type'] = 'text/plain'
+                            self.response.write('Failed')
+                            return
                 task.key.delete()
             list_key.delete()
             self.response.headers['Content-Type'] = 'text/plain'
@@ -747,7 +765,7 @@ class CreateTask(webapp2.RequestHandler):
                 if task.due_date:
                     if 'dateTime' in event['start']:
                         # not an all-day event
-                        event['summary'] = re.sub("-\s*\w+\s*$", "- " + task.name, event['summary'])
+                        event['summary'] = re.sub("-.*$", "- " + task.name, event['summary'])
                         start_time = parseEventTimeFromGoogleCalendar(event['start']['dateTime'])
                         end_time = parseEventTimeFromGoogleCalendar(event['end']['dateTime'])
                         delta = end_time-start_time
@@ -836,11 +854,14 @@ class DeleteTask(webapp2.RequestHandler):
         if self.request.get('task_key'):
             task_key = ndb.Key(urlsafe = self.request.get('task_key'))
             if self.request.get('delete_calendar') == 'on' and task_key.get().due_date_event_ID:
-                eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task_key.get().due_date_event_ID).execute(http = decorator.http())
-                if 'error' in eventsResult:
-                    self.response.headers['Content-Type'] = 'text/plain'
-                    self.response.write('Failed')
-                    return
+                event = calendar_service.events().get(calendarId='primary', eventId=task_key.get().due_date_event_ID).execute(http = decorator.http())
+                logging.info(event)
+                if not 'error' in event and not event['status'] == 'cancelled':
+                    eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task_key.get().due_date_event_ID).execute(http = decorator.http())
+                    if 'error' in eventsResult:
+                        self.response.headers['Content-Type'] = 'text/plain'
+                        self.response.write('Failed')
+                        return
             task_key.delete()
             self.response.headers['Content-Type'] = 'text/plain'
             self.response.write('Success')
