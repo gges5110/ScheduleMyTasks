@@ -869,6 +869,11 @@ class DeleteTask(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/plain'
             self.response.write('Failed')
 
+class GetRemainingTime(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        return
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/calendar', Calendar),
@@ -889,5 +894,6 @@ app = webapp2.WSGIApplication([
     ('/api/create_task', CreateTask),
     ('/api/edit_task_done', EditTaskDone),
     ('/api/delete_task', DeleteTask),
+    ('/api/get_remaing_time', GetRemainingTime),
     (decorator.callback_path, decorator.callback_handler())
 ], debug=True)
