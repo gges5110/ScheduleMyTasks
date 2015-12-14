@@ -366,7 +366,7 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
         # get timezone from usre's Google Calendar settings
         timezone_response = calendar_service.settings().get(setting='timezone').execute(http=http)
         timezone = timezone_response.get('value', [])
-
+        update_schedule = []
         for task_item in task_list:
             task_event_id = Task.query(Task.event_ID == task_item['fullcalendar_id']).fetch()
             task = None
@@ -397,21 +397,30 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
                 'summary': task_name + 'prepare'
             }
             data_json = json.dumps(data)
-
+            update_schedule_dict = dict()
             if len(task_event_id) > 0:
-                # logging.info('task_event_id[0].event_ID = ' + str(task_event_id[0].event_ID[0]))
                 logging.info('updating ' + str(task_item['fullcalendar_id']))
                 eventsResult = calendar_service.events().update(calendarId='primary', eventId=task_item['fullcalendar_id'], body=data).execute(http=http)
+                update_schedule_dict['event_id'] = task_item['fullcalendar_id']
+                update_schedule_dict['status'] = 'old_schedule'
             else:
                 eventsResult = calendar_service.events().insert(calendarId='primary', body= data).execute(http=http)
                 logging.info('creating ' + str(task_item['fullcalendar_id']))
+                update_schedule_dict['event_id'] = eventsResult['id']
+                update_schedule_dict['task_key'] = task.key.urlsafe()
+                update_schedule_dict['status'] = 'new_created_schedule'
                 if len(task.event_ID) == 0:
                     task.event_ID = [eventsResult['id']]
                 else:
+                    # task has other scheduled block
                     task.event_ID.append(eventsResult['id'])
                 task.put()
+            update_schedule.append(update_schedule_dict)
 
-        self.response.out.write(json.dumps(jsonobject))
+        obj = dict()
+        obj['update_schedule'] = update_schedule
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(obj))
 
 
 

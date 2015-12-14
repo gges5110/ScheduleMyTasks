@@ -176,6 +176,8 @@ $(function() { // document ready
                 success: function(event) {
                     var events = [];
                     $.each( event.schedule_list, function(index, element) {
+                        // Check if event id is already on calendar
+
                         if(element.status == 'confirmed') {
                             events.push({
                                 title: element.name,
@@ -184,8 +186,11 @@ $(function() { // document ready
                                 id : element.task_key,
                                 color: '#0c7cd5'
                             });
-                            console.log('element.task_key ' + element.task_key);
-                            task_ids_after_schedule.push(element.task_key);
+                            var index_in_array = $.inArray(element.task_key, task_ids_after_schedule);
+                            if( index_in_array == -1){
+                                task_ids_after_schedule.push(element.task_key);
+                            }
+
                         }
                         else if (element.status == 'is_scheduled') {
                             // The event is already sechduled and saved on calendar, change event color
@@ -193,10 +198,11 @@ $(function() { // document ready
                             var event_object_list = $('#calendar').fullCalendar( 'clientEvents', element.event_id );
                             event_object_list[0].color = '#0c7cd5';
                             $('#calendar').fullCalendar('updateEvent', event_object_list[0]);
-                            console.log('element.event_id = ' + element.event_id);
-                            task_ids_after_schedule.push(element.event_id);
+                            var index_in_array = $.inArray(element.event_id, task_ids_after_schedule);
+                            if( index_in_array == -1) {
+                                task_ids_after_schedule.push(element.event_id);
+                            }
                         }
-                        console.log('task_ids_after_schedule = ' + task_ids_after_schedule);
                     });
                     callback(events);
                 }
@@ -228,7 +234,24 @@ $(function() { // document ready
             type: 'POST',
             data: myJSON,
             processData: false,
-            contentType: "application/json; charset=UTF-8"
+            contentType: "application/json; charset=UTF-8",
+            success: function(event) {
+                $.each( event.update_schedule, function(index, element) {
+                    var event_object_list = [];
+                    console.log('element.status = ' + element.status);
+                    if(element.status === 'new_created_schedule' ) {
+                        // Change the id on fullCalendar from task_key to event_id
+                        event_object_list = $('#calendar').fullCalendar( 'clientEvents', element.task_key );
+                        event_object_list[0].id = element.event_id;
+                    }
+                    else if (element.status === 'old_schedule') {
+                        event_object_list = $('#calendar').fullCalendar( 'clientEvents', element.event_id );
+                    }
+                    event_object_list[0].color = '#ff9800';
+                    $('#calendar').fullCalendar('updateEvent', event_object_list[0]);
+
+                });
+            }
         });
     });
 
