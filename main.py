@@ -873,7 +873,43 @@ class DeleteTask(webapp2.RequestHandler):
 class GetRemainingTime(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
-        return
+        remaining_time_list = []
+        past_time = timedelta()
+        if self.request.get("task_key"):
+            task_key = ndb.Key(urlsafe=self.request.get("task_key"))
+            if task_key.get().estimated_finish_time:
+                for eventId in task_key.get().event_ID:
+                    event = calendar_service.events().get(calendarId='primary', eventId=eventId).execute(http = decorator.http())
+                    if event['start']:
+                        start_time = parseEventTimeFromGoogleCalendar(event['start']['dateTime'])
+                        end_time = parseEventTimeFromGoogleCalendar(event['end']['dateTime'])
+                        if end_time < date.today():
+                            past_time += end_time-start_time
+                remaining_time = timedelta(hours=task_key.get().estimated_finish_time.hour, minutes=task_key.get().estimated_finish_time.minute) - past_time
+                remaining_time_dict = dict()
+                remaining_time_dict['task_key'] = task_key
+                remaining_time_dict['remaining_time'] = (datetime.min + remaining_time).replace(year=1900).strftime("%I:%M")
+                remaining_time_list.append(remaining_time_dict)
+        elif self.request.get("list_key"):
+            list_key = ndb.Key(urlsafe=self.request.get("list_key"))
+            for task in Task.query(ndb.AND(Task.list_key == list_key, Task.estimated_finish_time != None)):
+                for eventId in task.event_ID:
+                    event = calendar_service.events().get(calendarId='primary', eventId=eventId).execute(http = decorator.http())
+                    if event['start']:
+                        start_time = parseEventTimeFromGoogleCalendar(event['start']['dateTime'])
+                        end_time = parseEventTimeFromGoogleCalendar(event['end']['dateTime'])
+                        if end_time < date.today():
+                            past_time += end_time-start_time
+                remaining_time = timedelta(hours=task.estimated_finish_time.hour, minutes=task.estimated_finish_time.minute) - past_time
+                remaining_time_dict = dict()
+                remaining_time_dict['task_key'] = task.key.urlsafe()
+                remaining_time_dict['remaining_time'] = (datetime.min + remaining_time).replace(year=1900).strftime("%I:%M")
+                remaining_time_list.append(remaining_time_dict)
+
+        obj = dict()
+        obj['remaining_time_list'] = remaining_time_list
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(obj))
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
@@ -895,6 +931,6 @@ app = webapp2.WSGIApplication([
     ('/api/create_task', CreateTask),
     ('/api/edit_task_done', EditTaskDone),
     ('/api/delete_task', DeleteTask),
-    ('/api/get_remaing_time', GetRemainingTime),
+    ('/api/get_remaining_time', GetRemainingTime),
     (decorator.callback_path, decorator.callback_handler())
 ], debug=True)
