@@ -39,7 +39,7 @@ div.panel-heading {
         <div class="panel panel-default">
             <div class="panel-heading">
                 <div class="col-md-8">
-                    {{ list.name }}
+                    <h4>{{ list.name }}</h4>
                 </div>
 
                 <div class="col-md-4 text-right">
@@ -109,18 +109,18 @@ $(document).ready(function() {
             theme : "bootstrap",
 
             widthFixed: true,
-        
+
             headerTemplate : '{content} {icon}', // new in v2.7. Needed to add the bootstrap icon!
             headers : {
                 0 : { sorter : false },
                 4 : { sorter : false }
             },
             sortList: [[2,0]],
-            
+
             widgets : [ "uitheme"]
 
         });
-        
+
     }
 
     function getRemainingTime(){

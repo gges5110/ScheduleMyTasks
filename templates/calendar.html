@@ -43,7 +43,7 @@ div.list_container {
     <div class="container">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h1>Calendar for {{ email }}</h1>
+                <h4>Calendar for {{ email }}</h4>
             </div>
 
             <div class="panel-body">
@@ -175,6 +175,7 @@ $(function() { // document ready
                             events.push({
                                 title: element.name,
                                 start: element.start,
+                                editable: true,
                                 end: element.end,
                                 id : element.task_key,
                                 color: '#0c7cd5'
@@ -189,6 +190,7 @@ $(function() { // document ready
                             // The event is already sechduled and saved on calendar, change event color
                             // find the event
                             var event_object_list = $('#calendar').fullCalendar( 'clientEvents', element.event_id );
+                            event_object_list[0].editable = true;
                             event_object_list[0].color = '#0c7cd5';
                             $('#calendar').fullCalendar('updateEvent', event_object_list[0]);
                             var index_in_array = $.inArray(element.event_id, task_ids_after_schedule);
@@ -208,10 +210,10 @@ $(function() { // document ready
         var tasks_to_save = []
         var events = $('#calendar').fullCalendar('clientEvents');
         $.each( events, function(index, event_object) {
-            console.log('event_object.id = ' + event_object.id);
+            // console.log('event_object.id = ' + event_object.id);
             var index = $.inArray(event_object.id, task_ids_after_schedule);
             if(index != -1) {
-                console.log('event_object.end = ' + event_object.end);
+                // console.log('event_object.end = ' + event_object.end);
                 var event_dict = {
                     'fullcalendar_id': event_object.id,
                     'start': event_object.start,
@@ -221,7 +223,7 @@ $(function() { // document ready
             }
         });
         var myJSON = JSON.stringify({task_list: tasks_to_save});
-        toastr.success('JSON = ' + myJSON);
+        // toastr.success('JSON = ' + myJSON);
         $.ajax({
             url: '/api/save_to_google_calendar',
             type: 'POST',
@@ -231,7 +233,7 @@ $(function() { // document ready
             success: function(event) {
                 $.each( event.update_schedule, function(index, element) {
                     var event_object_list = [];
-                    console.log('element.status = ' + element.status);
+                    // console.log('element.status = ' + element.status);
                     if(element.status === 'new_created_schedule' ) {
                         // Change the id on fullCalendar from task_key to event_id
                         event_object_list = $('#calendar').fullCalendar( 'clientEvents', element.task_key );
@@ -278,7 +280,8 @@ $(function() { // document ready
                 $('#fullCalModal').modal();
             });
         },
-        defaultDate: '2015-12-14',
+        defaultDate: '2015-12-20',
+        defaultView: 'agendaWeek',
         editable: true,
         eventLimit: true, // allow "more" link when too many events
         eventSources: [

@@ -278,7 +278,7 @@ class Schedule(webapp2.RequestHandler):
         day_end = time(22, 00, 00)
         increment = timedelta(seconds=1800)
 
-        now = datetime.strptime('2015-12-21T08:00:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ')
+        now = datetime.strptime('2015-12-22T08:00:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ')
 
         for event in events:
             # Choose status with confirmed
@@ -315,7 +315,6 @@ class Schedule(webapp2.RequestHandler):
                     # temp schedule for task
                     temp_start = now
                     temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.second*60)
-                    print temp_end
                     for busy in BusyList:
                         while busy.start <= temp_start < busy.end \
                             or busy.start < temp_end <= busy.end \
@@ -334,13 +333,6 @@ class Schedule(webapp2.RequestHandler):
                     schedule_temp = ScheduleEvent(temp_start, temp_end, tasks.id)
                     schedule_temp_list.append(schedule_temp)
 
-                # end = task.due_date
-                # start = end - timedelta(seconds = task.estimated_finish_time.hour*3600 + task.estimated_finish_time.minute*60)
-                # conflict = False
-                # for busy in BusyList:
-                #     if busy.start < start < busy.end or busy.start < end < busy.end:
-                #         conflict = True
-                #         break
                 for i, schedule_event in enumerate(schedule_temp_list):
                     schedule_dict = dict()
                     schedule_dict['status'] = 'confirmed'
@@ -720,7 +712,7 @@ class DeleteList(webapp2.RequestHandler):
                 for scheduled in task.event_ID:
                     event = calendar_service.events().get(calendarId='primary', eventId=scheduled).execute(http = decorator.http())
                     if not 'error' in event and not event['status'] == 'cancelled':
-                        eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task.due_date_event_ID).execute(http = decorator.http())
+                        eventsResult = calendar_service.events().delete(calendarId='primary', eventId=scheduled).execute(http = decorator.http())
                         if 'error' in eventsResult:
                             self.response.headers['Content-Type'] = 'text/plain'
                             self.response.write('Failed')
@@ -867,7 +859,7 @@ class DeleteTask(webapp2.RequestHandler):
             for scheduled in task_key.get().event_ID:
                 event = calendar_service.events().get(calendarId='primary', eventId=scheduled).execute(http = decorator.http())
                 if not 'error' in event and not event['status'] == 'cancelled':
-                    eventsResult = calendar_service.events().delete(calendarId='primary', eventId=task.due_date_event_ID).execute(http = decorator.http())
+                    eventsResult = calendar_service.events().delete(calendarId='primary', eventId=scheduled).execute(http = decorator.http())
                     if 'error' in eventsResult:
                         self.response.headers['Content-Type'] = 'text/plain'
                         self.response.write('Failed')
@@ -916,7 +908,7 @@ class GetRemainingTime(webapp2.RequestHandler):
                     if event['start']:
                         start_time = parseEventTimeFromGoogleCalendar(event['start']['dateTime'])
                         end_time = parseEventTimeFromGoogleCalendar(event['end']['dateTime'])
-                        if end_time < date.today():
+                        if end_time < datetime.today():
                             past_time += end_time-start_time
                 remaining_time = timedelta(hours=task.estimated_finish_time.hour, minutes=task.estimated_finish_time.minute) - past_time
                 remaining_time_dict = dict()
