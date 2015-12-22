@@ -141,11 +141,14 @@ $(function() { // document ready
     });
 
     $(document).on('click', '#schedule_btn', function(e) {
+        var now = new Date();
         var source = function( start, end, timezone, callback ) {
             $.ajax({
                 url: '/api/schedule',
                 data: {
-                    fullcalendar_id: tasks_to_schedule
+                    fullcalendar_id: tasks_to_schedule,
+                    date: now.toLocaleDateString(),
+                    time: now.toTimeString()
                 },
                 traditional: true,
                 xhr: function() {

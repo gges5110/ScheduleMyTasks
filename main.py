@@ -229,13 +229,8 @@ class GetListOffCalendar(webapp2.RequestHandler):
 
 class Busy:
     def __init__(self, start, end):
-        start_ = start.split('-')
-        end_ = end.split('-')
-        start_ = '-'.join(start_[0:3])
-        end_ = '-'.join(end_[0:3])
-
-        self.start = datetime.strptime(start_, '%Y-%m-%dT%H:%M:%S')
-        self.end = datetime.strptime(end_, '%Y-%m-%dT%H:%M:%S')
+        self.start = start
+        self.end = end
 
 class ScheduleEvent:
     def __init__(self, start, end, task_id):
@@ -278,7 +273,12 @@ class Schedule(webapp2.RequestHandler):
         day_end = time(22, 00, 00)
         increment = timedelta(seconds=1800)
 
-        now = datetime.strptime('2015-12-22T08:00:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ')
+        # Construct now datetime object
+
+        date_str = self.request.get('date') #12/22/2015
+        time_str = self.request.get('time') #00:04:02 GMT-0600 (Central Standard Time)
+        time_str = time_str.split(' ')[0] #00:04:02
+        local_now = datetime.strptime(date_str + ' ' + time_str, '%m/%d/%Y %X')
 
         for event in events:
             # Choose status with confirmed
@@ -289,7 +289,7 @@ class Schedule(webapp2.RequestHandler):
                     BusyList.append(b)
 
         fullcalendar_ids = self.request.get_all('fullcalendar_id')
-        logging.info('fullcalendar_ids = ' + str(fullcalendar_ids))
+        # logging.info('fullcalendar_ids = ' + str(fullcalendar_ids))
         for fullcalendar_id in fullcalendar_ids:
             # check if fullcalendar_id is in event_ID, if so it is already scheduled, update the color to pink
             task_event_id = Task.query(Task.event_ID == fullcalendar_id).fetch()
@@ -309,29 +309,42 @@ class Schedule(webapp2.RequestHandler):
                 while task_to_schedule.eft > small:
                     partitioned_list.append(Task2Schedule(task_to_schedule.due_date, small, task_to_schedule.id))
                     task_to_schedule = Task2Schedule(task_to_schedule.due_date, task_to_schedule.time_sub(small), task_to_schedule.id)
+                # logging.info('task_to_schedule.eft = ' + task_to_schedule.eft.isoformat())
                 partitioned_list.append(task_to_schedule)
 
                 for tasks in partitioned_list:
                     # temp schedule for task
-                    temp_start = now
-                    temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.second*60)
-                    for busy in BusyList:
-                        while busy.start <= temp_start < busy.end \
-                            or busy.start < temp_end <= busy.end \
-                            or (temp_start <= busy.start and busy.end <= temp_end) \
-                            or temp_start.time() < day_start \
+                    temp_start = local_now
+                    temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.minute*60)
+                    BusyList = sorted(BusyList, key=lambda _busy: _busy.start)
+                    if len(BusyList) > 0:
+                        for busy in BusyList:
+                            # increment temp datetime if conflict
+                            while busy.start <= temp_start < busy.end \
+                                or busy.start < temp_end <= busy.end \
+                                or (temp_start <= busy.start and busy.end <= temp_end) \
+                                or temp_start.time() < day_start \
+                                or temp_end.time() >= day_end \
+                                or temp_end.time() < day_start:
+                                temp_start += increment
+                                logging.info('increment, temp_start now = ' + temp_start.isoformat())
+                                temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.minute*60)
+
+                    else:
+                        while temp_start.time() < day_start \
                             or temp_end.time() >= day_end \
                             or temp_end.time() < day_start:
                             temp_start += increment
-                            temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.second*60)
+                            logging.info('increment, temp_start now = ' + temp_start.isoformat())
+                            temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.minute*60)
 
-                    logging.info('temp start = ' + temp_start.isoformat() + ', end = ' + temp_end.isoformat())
-                    logging.info('busy start = ' + busy.start.isoformat() + ', end = ' + busy.end.isoformat())
-                    BusyList.append(Busy(temp_start.isoformat(), temp_end.isoformat()))
+                    # update busylist once new temp is scheduled
+                    BusyList.append(Busy(temp_start, temp_end))
                     BusyList = sorted(BusyList, key=lambda _busy: _busy.start)
                     # append result to schedule list
                     schedule_temp = ScheduleEvent(temp_start, temp_end, tasks.id)
                     schedule_temp_list.append(schedule_temp)
+
 
                 for i, schedule_event in enumerate(schedule_temp_list):
                     schedule_dict = dict()
