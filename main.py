@@ -893,6 +893,13 @@ class DeleteTask(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/plain'
             self.response.write('Failed')
 
+class Settings(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def get(self):
+        template_values = {}
+        template = JINJA_ENVIRONMENT.get_template('/templates/settings.html')
+        self.response.write(template.render( template_values ))
+
 class GetRemainingTime(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
@@ -939,6 +946,7 @@ app = webapp2.WSGIApplication([
     ('/calendar', Calendar),
     ('/manage_lists', ManageLists),
     ('/manage_tasks', ManageTasks),
+    ('/settings', Settings),
     ('/api/sync_google_calendar_to_list', SyncGoogleCalendarToList),
     ('/api/get_calendar_event', GetCalendarEvent),
     ('/api/put_list_on_calendar', PutListOnCalendar),

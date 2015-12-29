@@ -266,6 +266,9 @@ $(function() { // document ready
         }
     });
 
+    var today = new Date();
+    var date_now = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();    
+
     $('#calendar').fullCalendar({
         header: {
           left: 'prev,next today',
@@ -283,7 +286,7 @@ $(function() { // document ready
                 $('#fullCalModal').modal();
             });
         },
-        defaultDate: '2015-12-20',
+        defaultDate: date_now,
         defaultView: 'agendaWeek',
         editable: true,
         eventLimit: true, // allow "more" link when too many events
