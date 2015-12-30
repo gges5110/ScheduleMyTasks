@@ -1,5 +1,52 @@
 {% extends "/templates/base.html" %}
 
 {% block content %}
-<p><strong>Settings</strong></p>
+<div class="col-sm-12">
+    <div class="container centered">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Settings</h>
+            </div>
+
+            <div class="panel-body">
+              <div class="col-sm-12">
+                <table class="table">
+                  <thead>
+                      <tr>
+                          <th>Item</th>
+                          <th>Value</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        Day Start Time:
+                      </td>
+                      <td>
+                        08:00
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Day End Time:
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Maximum Time for one Block:
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+            <div class="panel-footer clearfix">
+                <div class="col-sm-4">
+                    <button class="btn btn-primary" type="submit" id="sync_list_btn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

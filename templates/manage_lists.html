@@ -20,7 +20,6 @@ span.list_name_span {
             </div>
 
             <div class="panel-body">
-
                 <table class="table" id="manage_table">
                     <thead>
                         <tr>
@@ -37,13 +36,15 @@ span.list_name_span {
                         {% endfor%}
                     </tbody>
                 </table>
-                        <div class="empty_list_tile">
-                    {% if not lists %}
-                            <div class="jumbotron text-center">
-                                <h2 class="emtpy_list_title">You have no list!</h2>
-                            </div>
-                    {% endif %}
-                        </div>
+
+                {% if not lists %}
+                <div class="empty_list_tile">
+                  <div class="jumbotron text-center">
+                    <h2 class="emtpy_list_title">You have no list!</h2>
+                  </div>
+                </div>
+                {% endif %}
+
             </div>
             <div class="panel-footer clearfix">
                 <div class="col-sm-4">

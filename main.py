@@ -53,7 +53,6 @@ class List(ndb.Model):
     time_created = ndb.DateTimeProperty(auto_now_add = True)
     on_calendar = ndb.BooleanProperty(default = False)
 
-
 class Task(ndb.Model):
     name = ndb.StringProperty()
     estimated_finish_time = ndb.TimeProperty()
@@ -63,6 +62,11 @@ class Task(ndb.Model):
     list_key = ndb.KeyProperty(kind = List)
     done = ndb.BooleanProperty(default = False)
 
+class Setting(ndb.Model):
+    day_start = ndb.TimeProperty(required = True)
+    day_end = ndb.TimeProperty(required = True)
+    max_time = ndb.TimeProperty(required = True)
+    user_email = ndb.StringProperty(required = True)
 
 decorator = OAuth2DecoratorFromClientSecrets(
   os.path.join(os.path.dirname(__file__), 'client_secret.json'),
@@ -242,13 +246,6 @@ class ScheduleEvent:
     def toString(self):
         return ('Scheduled ' + self.task_id + ' from ' + self.start.isoformat() + ' to ' + self.end.isoformat())
 
-def datetime_with_timezone_to_datetime(datetime_str):
-    datetime_str_list = datetime_str.split('-')
-    datetime_str_without = '-'.join(datetime_str_list[0:3])
-    datetime_obj = datetime.strptime(datetime_str_without, '%Y-%m-%dT%H:%M:%S')
-    return datetime_obj
-
-
 class Task2Schedule:
     def __init__(self, _due_date, _eft, _id):
         self.due_date = _due_date
@@ -294,8 +291,8 @@ class Schedule(webapp2.RequestHandler):
             if 'status' in event and event['status'] == 'confirmed':
                 # Do not choose all day events
                 if 'dateTime' in event['start']:
-                    b = Busy(datetime_with_timezone_to_datetime(event['start'].get('dateTime')),
-                        datetime_with_timezone_to_datetime(event['end'].get('dateTime')))
+                    b = Busy(parseEventTimeFromGoogleCalendar(event['start'].get('dateTime')),
+                        parseEventTimeFromGoogleCalendar(event['end'].get('dateTime')))
                     BusyList.append(b)
 
         fullcalendar_ids = self.request.get_all('fullcalendar_id')
@@ -937,9 +934,17 @@ class DeleteTask(webapp2.RequestHandler):
 class Settings(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
-        template_values = {}
-        template = JINJA_ENVIRONMENT.get_template('/templates/settings.html')
-        self.response.write(template.render( template_values ))
+        current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+        settings = Setting.query(Setting.user_email == current_user).fetch()
+        if len(settings) > 0:
+            template_values = {}
+            template = JINJA_ENVIRONMENT.get_template('/templates/settings.html')
+            self.response.write(template.render( template_values ))
+        else:
+            template_values = {}
+            template = JINJA_ENVIRONMENT.get_template('/templates/settings.html')
+            self.response.write(template.render( template_values ))
+
 
 class GetRemainingTime(webapp2.RequestHandler):
     @decorator.oauth_required
