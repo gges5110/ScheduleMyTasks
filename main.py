@@ -63,9 +63,9 @@ class Task(ndb.Model):
     done = ndb.BooleanProperty(default = False)
 
 class Setting(ndb.Model):
-    day_start = ndb.TimeProperty(required = True)
-    day_end = ndb.TimeProperty(required = True)
-    max_time = ndb.TimeProperty(required = True)
+    day_start_time = ndb.TimeProperty(required = True)
+    day_end_time = ndb.TimeProperty(required = True)
+    max_time_per_block = ndb.TimeProperty(required = True)
     user_email = ndb.StringProperty(required = True)
 
 decorator = OAuth2DecoratorFromClientSecrets(
@@ -274,9 +274,20 @@ class Schedule(webapp2.RequestHandler):
         # Parameters for schedule
         BusyList = []
         schedule_list = []
-        small = time(2, 0, 0)
-        day_start = time(8, 0, 0)
-        day_end = time(22, 00, 00)
+
+        current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+        settings = Setting.query(Setting.user_email == current_user).fetch()
+
+        if len(settings) > 0:
+            setting = settings[0]
+            small = setting.max_time_per_block
+            day_start = setting.day_start_time
+            day_end = setting.day_end_time
+        else:
+            small = time(2, 0, 0)
+            day_start = time(8, 0, 0)
+            day_end = time(22, 00, 00)
+
         increment = timedelta(seconds=1800)
 
         # Construct now datetime object
@@ -936,14 +947,42 @@ class Settings(webapp2.RequestHandler):
     def get(self):
         current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
         settings = Setting.query(Setting.user_email == current_user).fetch()
+        eft_choices = []
+        start_time = datetime.combine(date.today(), time(0,0))
+        for i in range(0,47):
+            start_time = start_time + timedelta(minutes = 30)
+            eft_choices.append(start_time.strftime("%H:%M"))
         if len(settings) > 0:
-            template_values = {}
+            template_values = {
+                'eft_choices': eft_choices,
+                'setting': settings[0]
+                }
             template = JINJA_ENVIRONMENT.get_template('/templates/settings.html')
             self.response.write(template.render( template_values ))
         else:
-            template_values = {}
+            template_values = {
+                'eft_choices': eft_choices
+            }
             template = JINJA_ENVIRONMENT.get_template('/templates/settings.html')
             self.response.write(template.render( template_values ))
+    @decorator.oauth_required
+    def post(self):
+        current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
+        settings = Setting.query(Setting.user_email == current_user).fetch()
+
+        if len(settings) > 0:
+            setting = settings[0]
+        else:
+            setting = Setting()
+
+        setting.day_start_time = datetime.strptime(self.request.get('day_start_time'), "%H:%M").time()
+        setting.day_end_time = datetime.strptime(self.request.get('day_end_time'), "%H:%M").time()
+        setting.max_time_per_block = datetime.strptime(self.request.get('max_time_per_block'), "%H:%M").time()
+        setting.user_email = current_user
+        setting.put()
+
+        self.response.headers['Content-Type'] = 'text/plain'
+        self.response.write('Success')
 
 
 class GetRemainingTime(webapp2.RequestHandler):

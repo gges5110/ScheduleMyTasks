@@ -9,31 +9,49 @@
             </div>
 
             <div class="panel-body">
-              <div class="col-sm-12">
-                <table class="table">
+              <div class="col-sm-10 col-sm-offset-1">
+                <table class="table table-borderless">
                   <thead>
                       <tr>
-                          <th>Item</th>
-                          <th>Value</th>
+                          <th class="col-sm-4">Item</th>
+                          <th class="col-sm-4">Value</th>
                       </tr>
                   </thead>
                   <tbody>
                     <tr>
                       <td>
-                        Day Start Time:
+                        Day Start Time
                       </td>
                       <td>
-                        08:00
+                        <select id="day_start_time_select" class="form-control">
+                        {% for option in eft_choices %}
+                            <option value={{ option }} {% if setting.day_start_time.strftime('%H:%M') == option %} selected {% endif %}>{{ option }}</option>
+                        {% endfor %}
+                        </select>
                       </td>
                     </tr>
                     <tr>
                       <td>
-                        Day End Time:
+                        Day End Time
+                      </td>
+                      <td>
+                        <select id="day_end_time_select" class="form-control">
+                        {% for option in eft_choices %}
+                            <option value={{ option }} {% if setting.day_end_time.strftime('%H:%M') == option %} selected {% endif %}>{{ option }}</option>
+                        {% endfor %}
+                        </select>
                       </td>
                     </tr>
                     <tr>
                       <td>
-                        Maximum Time for one Block:
+                        Maximum Time for one Block
+                      </td>
+                      <td>
+                        <select id="max_time_per_block_select" class="form-control">
+                        {% for option in eft_choices %}
+                            <option value={{ option }} {% if setting.max_time_per_block.strftime('%H:%M') == option %} selected {% endif %}>{{ option }}</option>
+                        {% endfor %}
+                        </select>
                       </td>
                     </tr>
                   </tbody>
@@ -42,11 +60,66 @@
 
             </div>
             <div class="panel-footer clearfix">
-                <div class="col-sm-4">
-                    <button class="btn btn-primary" type="submit" id="sync_list_btn">Save</button>
+
+                <div class="col-sm-1 pull-right">
+                    <button class="btn btn-primary" type="submit" id="save_btn">Save</button>
+                </div>
+                <div class="col-sm-1 pull-right">
+                    <button class="btn btn-warning" type="submit" id="cancel_btn">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+
+
+<script type="text/javascript">
+$(function() { //ready
+  $(document).on('click', '#save_btn', function(event) {
+    toastr.info('Saving Settings...');
+    var day_start_time = $('#day_start_time_select').val();
+    var day_end_time = $('#day_end_time_select').val();
+    var max_time_per_block = $('#max_time_per_block_select').val();
+
+    $.ajax({
+      url: '/settings',
+      type: 'POST',
+      data: {
+        'day_start_time': day_start_time,
+        'day_end_time': day_end_time,
+        'max_time_per_block': max_time_per_block
+      },
+      success: function(msg) {
+        if (msg != 'Success'){
+          toastr.error("Error!");
+        }
+        else {
+          toastr.success('Settings saved!');
+        }
+      }
+    });
+
+
+  });
+
+
+
+  $(document).on('click', '#cancel_btn', function(event) {
+    toastr.success('Settings Cancelled!');
+
+    $("select#day_start_time_select option").filter(function() {
+        return $(this).text() == '{{ setting.day_start_time.strftime("%H:%M") }}';
+    }).prop('selected', true);
+
+    $("select#day_end_time_select option").filter(function() {
+        return $(this).text() == '{{ setting.day_end_time.strftime("%H:%M") }}';
+    }).prop('selected', true);
+
+    $("select#max_time_per_block_select option").filter(function() {
+        return $(this).text() == '{{ setting.max_time_per_block.strftime("%H:%M") }}';
+    }).prop('selected', true);
+  });
+});
+</script>
 {% endblock %}

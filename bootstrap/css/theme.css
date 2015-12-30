@@ -8,6 +8,10 @@ body {
   font-size: 18px;
 }
 
+.table-borderless td, .table-borderless th {
+  border: 0;
+  border-top: none !important; 
+}
 
 .scroll-wrapper {
     overflow: hidden !important;

@@ -12,6 +12,10 @@
     margin-bottom: 0 !important;
 }
 
+.modal-label {
+  width:200px;
+}
+
 span.task_name_column {
   display: inline-block;
   width: 200px;
@@ -161,13 +165,16 @@ $(document).ready(function() {
             $(this).closest('.tasks_table').removeClass('active');
             done = 'notchecked';
         }
-        var res = 'task_key=' + done_task_id;
-        res += '&done=' + done;
+        // var res = 'task_key=' + done_task_id;
+        // res += '&done=' + done;
 
         $.ajax({
             type: 'POST',
             url: 'api/edit_task_done',
-            data: res,
+            data: {
+              'task_key': done_task_id,
+              'done': done
+            },
             success: doneTask
         });
 
@@ -540,34 +547,29 @@ $(document).ready(function() {
           <h4 class="modal-title create_task_title">Create Task</h4>
         </div>
         <div class="modal-body">
-            <div>Task Name
+            <div class="form-inline">
+              <div class="form-group">
+                <label for="task_name" class="modal-label">Task Name</label>
                 <input type="text" class="form-control" id="task_name">
+              </div>
             </div>
 
-            <div class="row">
-                <div class="col-sm-12">
-                    Due Date
-                </div>
-            </div>
-
-            <div>
-                <div class="col-sm-8">
-                    <div class="form-group">
-                        <div class="input-group date" id="datetimepicker1">
-                            <input type="text" class="form-control" id="due_date"/>
-                            <span class="input-group-addon">
-                                <span class="glyphicon glyphicon-calendar"></span>
-                            </span>
-                        </div>
+            <div class="form-inline">
+                <div class="form-group">
+                  <label for="due_date" class="modal-label">Due Date</label>
+                    <div class="input-group date" id="datetimepicker1">
+                        <input type="text" class="form-control" id="due_date"/>
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-sm-8">
-                    Estimated Finish Time
-                    <!-- <input type="text" class="form-control" id="eft"> -->
-                    <select id="eft">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="eft" class="modal-label">Estimated Finish Time</label>
+                    <select id="eft" class="form-control">
                     {% for option in eft_choices %}
                         <option value={{ option }} {% if loop.first %} selected {% endif %}>{{ option }}</option>
                     {% endfor %}
