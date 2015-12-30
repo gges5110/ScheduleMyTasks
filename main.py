@@ -194,6 +194,8 @@ class GetCalendarEvent(webapp2.RequestHandler):
                 # logging.info('google_calendar_event_id = ' + google_calendar_event_id + ', summary = ' + event['summary'] + ', task_event_id = ' + str(len(task_event_id)))
                 if len(task_event_id) > 0:
                     event_dict['is_scheduled'] = 'on'
+                    event_dict['done'] = task_event_id[0].done
+                    logging.info('done = ' + str(task_event_id[0].done))
                 else:
                     event_dict['is_scheduled'] = 'off'
 
@@ -240,6 +242,13 @@ class ScheduleEvent:
     def toString(self):
         return ('Scheduled ' + self.task_id + ' from ' + self.start.isoformat() + ' to ' + self.end.isoformat())
 
+def datetime_with_timezone_to_datetime(datetime_str):
+    datetime_str_list = datetime_str.split('-')
+    datetime_str_without = '-'.join(datetime_str_list[0:3])
+    datetime_obj = datetime.strptime(datetime_str_without, '%Y-%m-%dT%H:%M:%S')
+    return datetime_obj
+
+
 class Task2Schedule:
     def __init__(self, _due_date, _eft, _id):
         self.due_date = _due_date
@@ -277,7 +286,7 @@ class Schedule(webapp2.RequestHandler):
 
         date_str = self.request.get('date') #12/22/2015
         time_str = self.request.get('time') #00:04:02 GMT-0600 (Central Standard Time)
-        time_str = time_str.split(' ')[0] #00:04:02
+        time_str = time_str.split(' ')[0]   #00:04:02
         local_now = datetime.strptime(date_str + ' ' + time_str, '%m/%d/%Y %X')
 
         for event in events:
@@ -285,7 +294,8 @@ class Schedule(webapp2.RequestHandler):
             if 'status' in event and event['status'] == 'confirmed':
                 # Do not choose all day events
                 if 'dateTime' in event['start']:
-                    b = Busy(event['start'].get('dateTime'), event['end'].get('dateTime'))
+                    b = Busy(datetime_with_timezone_to_datetime(event['start'].get('dateTime')),
+                        datetime_with_timezone_to_datetime(event['end'].get('dateTime')))
                     BusyList.append(b)
 
         fullcalendar_ids = self.request.get_all('fullcalendar_id')
@@ -296,6 +306,8 @@ class Schedule(webapp2.RequestHandler):
             if len(task_event_id) > 0:
                 schedule_dict = dict()
                 schedule_dict['status'] = 'is_scheduled'
+                logging.info('done = ' + str(task_event_id[0].done))
+                schedule_dict['done'] = task_event_id[0].done
                 schedule_dict['event_id'] = fullcalendar_id
                 schedule_list.append(schedule_dict)
 
@@ -320,6 +332,8 @@ class Schedule(webapp2.RequestHandler):
                     if len(BusyList) > 0:
                         for busy in BusyList:
                             # increment temp datetime if conflict
+                            logging.info("busy.start" + busy.start.isoformat())
+                            logging.info("temp_start" + temp_start.isoformat())
                             while busy.start <= temp_start < busy.end \
                                 or busy.start < temp_end <= busy.end \
                                 or (temp_start <= busy.start and busy.end <= temp_end) \
@@ -349,11 +363,13 @@ class Schedule(webapp2.RequestHandler):
                 for i, schedule_event in enumerate(schedule_temp_list):
                     schedule_dict = dict()
                     schedule_dict['status'] = 'confirmed'
+
                     logging.info('schedule_event = ' + schedule_event.toString())
                     schedule_dict['start'] = schedule_event.start.isoformat()
                     schedule_dict['end'] = schedule_event.end.isoformat()
 
                     schedule_dict['name'] = task.name
+                    schedule_dict['done'] = task.done
                     schedule_dict['task_key'] = task.key.urlsafe() + ':' + str(i)
                     schedule_dict['list_key'] = task.list_key.urlsafe()
                     schedule_list.append(schedule_dict)
@@ -494,19 +510,19 @@ class SaveToGoogleCalendar(webapp2.RequestHandler):
         self.response.out.write(json.dumps(obj))
 
 
-
-
 class SyncGoogleCalendarToList(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
         # fetch events from google calendar
-        time_min = '2015-11-01T00:00:00.000Z'
-        time_max = '2015-12-31T00:00:00.000Z'
+        # time_min = '2015-11-01T00:00:00.000Z'
+        # time_max = '2015-12-31T00:00:00.000Z'
 
         http = decorator.http()
         # Call the service using the authorized Http object.
+        # eventsResult = calendar_service.events().list(
+        #     calendarId='primary', timeMin=time_min, timeMax=time_max).execute(http=http)
         eventsResult = calendar_service.events().list(
-            calendarId='primary', timeMin=time_min, timeMax=time_max).execute(http=http)
+            calendarId='primary').execute(http=http)
         events = eventsResult.get('items', [])
         new_lists = []
         for event in events:
@@ -624,17 +640,42 @@ class NextItemInList(webapp2.RequestHandler):
         next_item_list = []
         for list in lists:
             next_item_dict = dict()
-            tasks = Task.query(ndb.AND(Task.list_key == list.key, Task.due_date > datetime.now())).order(Task.due_date).fetch(1)
-            if tasks:
-                next_item_dict['list_key'] = list.key.urlsafe()
-                next_item_dict['task_name'] = tasks[0].name
-                next_item_dict['due_date'] = tasks[0].due_date.strftime('%m/%d/%Y %I:%M %p')
-                next_item_list.append(next_item_dict)
+            tasks = Task.query(ndb.AND(Task.list_key == list.key, Task.due_date > datetime.now())).order(Task.due_date).fetch()
+            for task in tasks:
+                if task.done == False:
+                    next_item_dict['list_key'] = list.key.urlsafe()
+                    next_item_dict['task_name'] = task.name
+                    next_item_dict['due_date'] = task.due_date.strftime('%m/%d/%Y %I:%M %p')
+                    next_item_list.append(next_item_dict)
+                    break
 
         obj = dict()
         obj['list'] = next_item_list
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(obj))
+
+class DeleteScheduledTasks(webapp2.RequestHandler):
+    @decorator.oauth_required
+    def post(self):
+        if self.request.get('task_key'):
+            task_key = ndb.Key(urlsafe = self.request.get('task_key'))
+            for scheduled in task_key.get().event_ID:
+                event = calendar_service.events().get(calendarId='primary', eventId=scheduled).execute(http = decorator.http())
+                if not 'error' in event and not event['status'] == 'cancelled':
+                    eventsResult = calendar_service.events().delete(calendarId='primary', eventId=scheduled).execute(http = decorator.http())
+                    if 'error' in eventsResult:
+                        self.response.headers['Content-Type'] = 'text/plain'
+                        self.response.write('Failed')
+                        return
+            # task_key.delete()
+            task = task_key.get()
+            task.event_ID = []
+            task.put()
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Success')
+        else:
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Failed')
 
 
 class TotalTimeForList(webapp2.RequestHandler):
@@ -957,6 +998,7 @@ app = webapp2.WSGIApplication([
     ('/api/save_to_google_calendar', SaveToGoogleCalendar),
     ('/api/next_item_in_list', NextItemInList),
     ('/api/schedule', Schedule),
+    ('/api/delete_scheduled_tasks', DeleteScheduledTasks),
     ('/api/create_list', CreateList),
     ('/api/delete_list', DeleteList),
     ('/api/create_task', CreateTask),

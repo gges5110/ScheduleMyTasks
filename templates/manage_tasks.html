@@ -43,7 +43,7 @@ div.panel-heading {
                 </div>
 
                 <div class="col-md-4 text-right">
-                    <button data-toggle="modal" data-target="#edit_list_modal" class="btn btn-warning edit_list" id="{{ list.key.urlsafe() }}" >Edit List</button>
+                    <button data-toggle="modal" data-target="#edit_list_modal" class="btn btn-warning edit_list" id="{{ list.key.urlsafe() }}">Edit List</button>
                 </div>
                 <div id="intelligent_gap"></div>
             </div>
@@ -139,7 +139,7 @@ $(document).ready(function() {
 
     NProgress.done(true);
 
-    var create_dialog, edit_dialog, list_name, list_key;
+    var create_dialog, edit_dialog, done_dialog, list_name, list_key;
 
     list_name = '{{ list.name }}';
     list_key = '{{ list.key.urlsafe() }}';
@@ -148,15 +148,16 @@ $(document).ready(function() {
     $(document).on('click', '#task_done_checkbox', function(event){
         var done;
         var done_task_id = $(this).closest('tr.tasks_table').attr('id');
-        console.log("clicked");
         $(this).attr("checked", !$(this).attr("checked"));
         if($(this).attr("checked")) {
             console.log("check");
             $(this).closest('.tasks_table').addClass('active');
+            $('#done_task_modal').modal('show');
+            $('#done_task_id').val(done_task_id);
             done = 'checked';
         }
         else{
-            console.log("uncheck");
+            // console.log("uncheck");
             $(this).closest('.tasks_table').removeClass('active');
             done = 'notchecked';
         }
@@ -399,7 +400,7 @@ $(document).ready(function() {
             success: function(msg) {
                 console.log(msg)
                 if (msg === 'Success') {
-                    window.location.assign("/manage_lists")
+                    window.location.assign("/manage_lists");
                     toastr.success('List deleted!');
                 }
                 else{
@@ -421,8 +422,51 @@ $(document).ready(function() {
         var res = 'list_key=' + list_key;
         deleteList(res);
     });
+
+    $(document).on('click', '.modal_button_done_task_delete_calendar', function(event) {
+        toastr.info('Deleting scheduled tasks...');
+
+        var res = 'task_key=' + $('#done_task_id').val();
+        $.ajax({
+            type: 'POST',
+            url: 'api/delete_scheduled_tasks',
+            data: res,
+            success: function(msg) {
+                console.log(msg)
+                if (msg === 'Success') {
+                    toastr.success('Scheduled tasks deleted!');
+                }
+                else{
+                    toastr.error('Error!');
+                }
+            }
+        });
+    });
+
+
 });
 </script>
+
+<!-- Modal Done -->
+<div class="modal fade" id="done_task_modal" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="done_task_title">Modal Header</h4>
+        </div>
+        <div class="modal-body">
+            Would you like to delete future scheduled tasks on Google Calendar?
+        </div>
+        <div class="modal-footer">
+          <input type="hidden" id="done_task_id">
+          <button type="button" class="btn btn-danger modal_button_done_task_delete_calendar" data-dismiss="modal">Yes</button>
+          <button type="button" class="btn btn-primary modal_button_done_task" data-dismiss="modal">No</button>
+        </div>
+      </div>
+    </div>
+</div>
 
 <!-- Modal Edit List -->
 <div class="modal fade" id="edit_list_modal" role="dialog">
@@ -485,7 +529,6 @@ $(document).ready(function() {
       </div>
     </div>
 </div>
-
 
 <!-- Modal Create -->
 <div class="modal fade" id="create_task_modal" role="dialog">

@@ -27,6 +27,10 @@ div.list_container {
     /*font-size: 20px;*/
 }
 
+div.fc-center>h2 {
+    font-size: 24px;
+}
+
 .accordion-heading {
     padding-top: 10px;
     height: 50px;
@@ -142,6 +146,19 @@ $(function() { // document ready
 
     $(document).on('click', '#schedule_btn', function(e) {
         var now = new Date();
+        if(0 < now.getMinutes() && now.getMinutes() <= 15) {
+          now.setMinutes(0);
+        }
+        else if(15 < now.getMinutes() && now.getMinutes() <= 30) {
+          now.setMinutes(15);
+        }
+        else if(30 < now.getMinutes() && now.getMinutes() <= 45) {
+          now.setMinutes(30);
+        }
+        else if(45 < now.getMinutes() && now.getMinutes() < 60) {
+          now.setMinutes(45);
+        }
+
         var source = function( start, end, timezone, callback ) {
             $.ajax({
                 url: '/api/schedule',
@@ -210,19 +227,23 @@ $(function() { // document ready
     });
 
     $(document).on('click', '#save_schedule_btn', function(e) {
+        toastr.info('Saving tasks...');
         var tasks_to_save = []
         var events = $('#calendar').fullCalendar('clientEvents');
         $.each( events, function(index, event_object) {
-            // console.log('event_object.id = ' + event_object.id);
             var index = $.inArray(event_object.id, task_ids_after_schedule);
             if(index != -1) {
                 // console.log('event_object.end = ' + event_object.end);
                 var event_dict = {
                     'fullcalendar_id': event_object.id,
-                    'start': event_object.start,
-                    'end': event_object.end
+                    'start': event_object._start._d,
+                    'end': event_object._end._d
                 };
                 tasks_to_save.push(event_dict);
+                console.log('event_object.start = ' + event_object._start._d + ', event_object.end = ' + event_object._end._d );
+                var start = new Date(event_object._start._d);
+                var end = new Date(event_object._end._d);
+                console.log('start.toString() = ' + start.toString() + ', end.toString() = ' + end.toString() );
             }
         });
         var myJSON = JSON.stringify({task_list: tasks_to_save});
@@ -234,6 +255,7 @@ $(function() { // document ready
             processData: false,
             contentType: "application/json; charset=UTF-8",
             success: function(event) {
+                toastr.success('Tasks saved.');
                 $.each( event.update_schedule, function(index, element) {
                     var event_object_list = [];
                     // console.log('element.status = ' + element.status);
@@ -266,8 +288,10 @@ $(function() { // document ready
         }
     });
 
+
+
     var today = new Date();
-    var date_now = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();    
+    var date_now = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
 
     $('#calendar').fullCalendar({
         header: {
@@ -303,14 +327,25 @@ $(function() { // document ready
                         },
                         function(event) {
                             var events = [];
+
                             $.each( event.event_list, function(index, element) {
-                                if(element.is_scheduled === 'on'){
+                                if(element.is_scheduled === 'on' && element.done === false) {
                                     events.push({
                                         title: element.title,
                                         start: element.start,
                                         end: element.end,
                                         id : element.id,
                                         color: '#ff9800',
+                                        url: element.link
+                                    });
+                                }
+                                else if(element.is_scheduled === 'on' && element.done === true) {
+                                    events.push({
+                                        title: element.title,
+                                        start: element.start,
+                                        end: element.end,
+                                        id : element.id,
+                                        color: '#ffd699',
                                         url: element.link
                                     });
                                 }

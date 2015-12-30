@@ -20,6 +20,8 @@ handlers:
   static_dir: bootstrap
 - url: /bootstrap3-dialog
   static_dir: bootstrap3-dialog
+- url: /bootstrap-autohidingnavbar
+  static_dir: bootstrap-autohidingnavbar
 - url: /jquery-ui
   static_dir: jquery-ui
 - url: /jquery
