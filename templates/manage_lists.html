@@ -51,10 +51,16 @@ span.list_name_span {
                     <input type="text" class="form-control" placeholder="Add new list here" id="list_name">
                 </div>
                 <div class="col-sm-4">
-                    <button class="btn btn-primary" type="submit" id="create_list_btn">Create List</button>
+                    <button class="btn btn-primary" type="submit" id="create_list_btn">
+                      <i class="glyphicon glyphicon-plus" ></i>
+                      <span>Create List</span>
+                    </button>
                 </div>
                 <div class="col-sm-4">
-                    <button class="btn btn-primary" type="submit" id="sync_list_btn">Fetch Google Calendar List</button>
+                    <button class="btn btn-warning" type="submit" id="sync_list_btn">
+                      <i class="glyphicon glyphicon-refresh" ></i>
+                      <span>Fetch Google Calendar List</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -63,6 +69,10 @@ span.list_name_span {
 
 <script>
 $(document).ready(function() {
+    $('li#li_calendar').removeClass('active');
+    $('li#li_lists').addClass('active');
+    $('li#li_settings').removeClass('active');
+
     $.getJSON(
         '/api/next_item_in_list',
         function(json) {

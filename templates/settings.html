@@ -20,36 +20,96 @@
                   <tbody>
                     <tr>
                       <td>
-                        Day Start Time
+                        <i class="glyphicon glyphicon-time" ></i>
+                        <span>Day Start Time</span>
                       </td>
                       <td>
                         <select id="day_start_time_select" class="form-control">
                         {% for option in eft_choices %}
-                            <option value={{ option }} {% if setting.day_start_time.strftime('%H:%M') == option %} selected {% endif %}>{{ option }}</option>
+                            <option value={{ option }}
+                              {% if setting %}
+                                {% if setting.day_start_time.strftime('%H:%M') == option %}
+                                  selected
+                                {% endif %}
+                              {% else %}
+                                {% if loop.first %}
+                                  selected
+                                {% endif %}
+                              {% endif %}>
+                              {{ option }}
+                            </option>
                         {% endfor %}
                         </select>
                       </td>
                     </tr>
                     <tr>
                       <td>
-                        Day End Time
+                        <i class="glyphicon glyphicon-time" ></i>
+                        <span>Day End Time</span>
                       </td>
                       <td>
                         <select id="day_end_time_select" class="form-control">
                         {% for option in eft_choices %}
-                            <option value={{ option }} {% if setting.day_end_time.strftime('%H:%M') == option %} selected {% endif %}>{{ option }}</option>
+                        <option value={{ option }}
+                          {% if setting %}
+                            {% if setting.day_end_time.strftime('%H:%M') == option %}
+                              selected
+                            {% endif %}
+                          {% else %}
+                            {% if loop.first %}
+                              selected
+                            {% endif %}
+                          {% endif %}>
+                          {{ option }}
+                        </option>
                         {% endfor %}
                         </select>
                       </td>
                     </tr>
                     <tr>
                       <td>
-                        Maximum Time for one Block
+                        <i class="glyphicon glyphicon-time" ></i>
+                        <span>Maximum Time for one Block</span>
                       </td>
                       <td>
                         <select id="max_time_per_block_select" class="form-control">
                         {% for option in eft_choices %}
-                            <option value={{ option }} {% if setting.max_time_per_block.strftime('%H:%M') == option %} selected {% endif %}>{{ option }}</option>
+                        <option value={{ option }}
+                          {% if setting %}
+                            {% if setting.max_time_per_block.strftime('%H:%M') == option %}
+                              selected
+                            {% endif %}
+                          {% else %}
+                            {% if loop.first %}
+                              selected
+                            {% endif %}
+                          {% endif %}>
+                          {{ option }}
+                        </option>
+                        {% endfor %}
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <i class="glyphicon glyphicon-time" ></i>
+                        <span>Break Time</span>
+                      </td>
+                      <td>
+                        <select id="break_time_select" class="form-control">
+                        {% for option in eft_choices %}
+                        <option value={{ option }}
+                          {% if setting %}
+                            {% if setting.break_time.strftime('%H:%M') == option %}
+                              selected
+                            {% endif %}
+                          {% else %}
+                            {% if loop.first %}
+                              selected
+                            {% endif %}
+                          {% endif %}>
+                          {{ option }}
+                        </option>
                         {% endfor %}
                         </select>
                       </td>
@@ -62,7 +122,10 @@
             <div class="panel-footer clearfix">
 
                 <div class="col-sm-1 pull-right">
-                    <button class="btn btn-primary" type="submit" id="save_btn">Save</button>
+                    <button class="btn btn-primary" type="submit" id="save_btn">
+                      <i class="glyphicon glyphicon-floppy-disk" ></i>
+                      <span>Save</span>
+                    </button>
                 </div>
                 <div class="col-sm-1 pull-right">
                     <button class="btn btn-warning" type="submit" id="cancel_btn">Cancel</button>
@@ -76,11 +139,16 @@
 
 <script type="text/javascript">
 $(function() { //ready
+  $('li#li_calendar').removeClass('active');
+  $('li#li_lists').removeClass('active');
+  $('li#li_settings').addClass('active');
+
   $(document).on('click', '#save_btn', function(event) {
     toastr.info('Saving Settings...');
     var day_start_time = $('#day_start_time_select').val();
     var day_end_time = $('#day_end_time_select').val();
     var max_time_per_block = $('#max_time_per_block_select').val();
+    var break_time = $('#break_time_select').val();
 
     $.ajax({
       url: '/settings',
@@ -88,7 +156,8 @@ $(function() { //ready
       data: {
         'day_start_time': day_start_time,
         'day_end_time': day_end_time,
-        'max_time_per_block': max_time_per_block
+        'max_time_per_block': max_time_per_block,
+        'break_time': break_time
       },
       success: function(msg) {
         if (msg != 'Success'){
@@ -108,6 +177,7 @@ $(function() { //ready
   $(document).on('click', '#cancel_btn', function(event) {
     toastr.success('Settings Cancelled!');
 
+    {% if setting %}
     $("select#day_start_time_select option").filter(function() {
         return $(this).text() == '{{ setting.day_start_time.strftime("%H:%M") }}';
     }).prop('selected', true);
@@ -119,6 +189,29 @@ $(function() { //ready
     $("select#max_time_per_block_select option").filter(function() {
         return $(this).text() == '{{ setting.max_time_per_block.strftime("%H:%M") }}';
     }).prop('selected', true);
+
+    $("select#break_time_select option").filter(function() {
+        return $(this).text() == '{{ setting.break_time.strftime("%H:%M") }}';
+    }).prop('selected', true);
+
+    {% else %}
+    var time_first = '00:30';
+    $("select#day_start_time_select option").filter(function() {
+        return $(this).text() == time_first;
+    }).prop('selected', true);
+
+    $("select#day_end_time_select option").filter(function() {
+        return $(this).text() == time_first;
+    }).prop('selected', true);
+
+    $("select#max_time_per_block_select option").filter(function() {
+        return $(this).text() == time_first;
+    }).prop('selected', true);
+
+    $("select#break_time_select option").filter(function() {
+        return $(this).text() == time_first;
+    }).prop('selected', true);
+    {% endif %}
   });
 });
 </script>

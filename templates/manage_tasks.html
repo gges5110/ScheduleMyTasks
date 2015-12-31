@@ -106,6 +106,10 @@ div.panel-heading {
 
 <script>
 $(document).ready(function() {
+  $('li#li_calendar').removeClass('active');
+  $('li#li_lists').addClass('active');
+  $('li#li_settings').removeClass('active');
+
     {
         $("#manage_table").tablesorter({
             // this will apply the bootstrap theme if "uitheme" widget is included

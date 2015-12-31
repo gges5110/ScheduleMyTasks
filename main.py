@@ -66,6 +66,7 @@ class Setting(ndb.Model):
     day_start_time = ndb.TimeProperty(required = True)
     day_end_time = ndb.TimeProperty(required = True)
     max_time_per_block = ndb.TimeProperty(required = True)
+    break_time = ndb.TimeProperty(required = True)
     user_email = ndb.StringProperty(required = True)
 
 decorator = OAuth2DecoratorFromClientSecrets(
@@ -234,9 +235,17 @@ class GetListOffCalendar(webapp2.RequestHandler):
         self.response.out.write(json.dumps(obj))
 
 class Busy:
-    def __init__(self, start, end):
-        self.start = start
-        self.end = end
+    break_time = time()
+
+    def __init__(self, start=None, end=None):
+        if start is None:
+            self.start = datetime.now()
+        else:
+            self.start = start - timedelta(seconds = 3600 * self.break_time.hour + 60 * self.break_time.minute)
+        if end is None:
+            self.end = datetime.now()
+        else:
+            self.end = end + timedelta(seconds = 3600 * self.break_time.hour + 60 * self.break_time.minute)
 
 class ScheduleEvent:
     def __init__(self, start, end, task_id):
@@ -276,17 +285,18 @@ class Schedule(webapp2.RequestHandler):
         schedule_list = []
 
         current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
-        settings = Setting.query(Setting.user_email == current_user).fetch()
-
+        settings = Setting.query(Setting.user_email == current_user).fetch()        
         if len(settings) > 0:
             setting = settings[0]
             small = setting.max_time_per_block
             day_start = setting.day_start_time
             day_end = setting.day_end_time
+            Busy.break_time = setting.break_time
         else:
             small = time(2, 0, 0)
             day_start = time(8, 0, 0)
             day_end = time(22, 00, 00)
+            Busy.break_time = time(0, 30, 00)
 
         increment = timedelta(seconds=1800)
 
@@ -340,8 +350,8 @@ class Schedule(webapp2.RequestHandler):
                     if len(BusyList) > 0:
                         for busy in BusyList:
                             # increment temp datetime if conflict
-                            logging.info("busy.start" + busy.start.isoformat())
-                            logging.info("temp_start" + temp_start.isoformat())
+                            # logging.info("busy.start" + busy.start.isoformat())
+                            # logging.info("temp_start" + temp_start.isoformat())
                             while busy.start <= temp_start < busy.end \
                                 or busy.start < temp_end <= busy.end \
                                 or (temp_start <= busy.start and busy.end <= temp_end) \
@@ -349,7 +359,7 @@ class Schedule(webapp2.RequestHandler):
                                 or temp_end.time() >= day_end \
                                 or temp_end.time() < day_start:
                                 temp_start += increment
-                                logging.info('increment, temp_start now = ' + temp_start.isoformat())
+                                # logging.info('increment, temp_start now = ' + temp_start.isoformat())
                                 temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.minute*60)
 
                     else:
@@ -357,7 +367,7 @@ class Schedule(webapp2.RequestHandler):
                             or temp_end.time() >= day_end \
                             or temp_end.time() < day_start:
                             temp_start += increment
-                            logging.info('increment, temp_start now = ' + temp_start.isoformat())
+                            # logging.info('increment, temp_start now = ' + temp_start.isoformat())
                             temp_end = temp_start + timedelta(seconds=tasks.eft.hour*3600 + tasks.eft.minute*60)
 
                     # update busylist once new temp is scheduled
@@ -978,6 +988,7 @@ class Settings(webapp2.RequestHandler):
         setting.day_start_time = datetime.strptime(self.request.get('day_start_time'), "%H:%M").time()
         setting.day_end_time = datetime.strptime(self.request.get('day_end_time'), "%H:%M").time()
         setting.max_time_per_block = datetime.strptime(self.request.get('max_time_per_block'), "%H:%M").time()
+        setting.break_time = datetime.strptime(self.request.get('break_time'), "%H:%M").time()
         setting.user_email = current_user
         setting.put()
 

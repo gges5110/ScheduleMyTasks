@@ -9,7 +9,7 @@ span.list_name_span {
 
 span.task_name_span {
     display: inline-block;
-    width: 100px;
+    width: 150px;
 }
 
 span.accordion_header_span {
@@ -42,7 +42,9 @@ div.fc-center>h2 {
     <div class="container">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h4>Calendar for {{ email }}</h4>
+                <h4>Calendar for
+                  <a href="https://calendar.google.com/calendar/">{{ email }}</a>
+                </h4>
             </div>
 
             <div class="panel-body">
@@ -132,6 +134,11 @@ div.fc-center>h2 {
 <script>
 var task_ids_after_schedule = [];
 $(function() { // document ready
+
+    $('li#li_calendar').addClass('active');
+    $('li#li_lists').removeClass('active');
+    $('li#li_settings').removeClass('active');
+
 
     $(document).on('click', '#learn_more', function(e) {
     });
@@ -294,6 +301,7 @@ $(function() { // document ready
           center: 'title',
           right: 'month,agendaWeek,agendaDay'
         },
+        // height: 1650,
         eventRender: function (event, element) {
             element.attr('href', 'javascript:void(0);');
             element.click(function() {
