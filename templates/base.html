@@ -51,11 +51,11 @@
     </head>
 
     <body>
-        <div class="wrapper scrollbar-inner">
+        <div class="wrapper">
             <!-- Fixed navbar -->
             <nav class="navbar navbar-default navbar-fixed-top">
                 <div class="container">
-                    <div class="navbar-header">
+                    <!-- <div class="navbar-header">
                         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
                             <span class="sr-only">Toggle navigation</span>
                             <span class="icon-bar"></span>
@@ -63,40 +63,44 @@
                             <span class="icon-bar"></span>
                         </button>
 
-                        <a class="navbar-brand" href="/">
-                            <i class="glyphicon glyphicon-home"></i>
-                            <span>ScheduleMyTasks</span>
-                        </a>
-                    </div>
 
-                    <div id="navbar" class="navbar-collapse collapse">
-                        <ul class="nav navbar-nav nav-tabs">
-                            <li role="presentation" id="li_calendar">
-                                <a href="/calendar" id="calendar_nav">
+                    </div> -->
+
+                    <!-- <div id="navbar" class="navbar-collapse collapse"> -->
+                        <ul class="nav nav-tabs">
+                            <li class="nav_li">
+                              <a class="navbar-brand" href="/">
+                                  <i class="glyphicon glyphicon-home"></i>
+                                  <span>ScheduleMyTasks</span>
+                              </a>
+                            </li>
+
+                            <li id="li_calendar" class="nav_li">
+                                <a class="navbar-brand" href="/calendar" id="calendar_nav">
                                     <i class="glyphicon glyphicon-calendar" ></i>
                                     <span>Calendar</span>
                                 </a>
                             </li>
-                            <li role="presentation" id="li_lists">
-                                <a href="/manage_lists" id="list_nav">
+                            <li id="li_lists" class="nav_li">
+                                <a class="navbar-brand" href="/manage_lists" id="list_nav">
                                     <i class="glyphicon glyphicon-list-alt" ></i>
                                     <span>Lists</span>
                                 </a>
                             </li>
-                            <li role="presentation" id="li_settings">
-                                <a href="/settings" id="list_nav">
+                            <li id="li_settings" class="nav_li">
+                                <a class="navbar-brand" href="/settings" id="list_nav">
                                     <i class="glyphicon glyphicon-cog" ></i>
                                     <span>Settings</span>
                                 </a>
                             </li>
                         </ul>
-                    </div><!--/.nav-collapse -->
+                    <!-- </div> -->
                 </div>
             </nav>
 
 
 
-            <div class="container" style="padding-top: 100px;" role="main">
+            <div class="container" style="padding-top: 70px; padding-bottom: 100px;" role="main">
 
             {% block header %}
             {% endblock %}
@@ -104,18 +108,19 @@
             {% block content %}
             {% endblock %}
             </div>
+
+            <footer class="footer">
+                 <div class="container">
+                     <p>
+                         Designed by <a href="https://www.linkedin.com/in/jenny-chen-1a953969">Jenny Chen</a>
+                         and <a href="http://gerry-wu.strikingly.com/"> Yu-Chia Wu</a>
+                         <br>
+                         Last Updated: December 2015
+                     </p>
+                 </div>
+             </footer>
         </div>
-       <footer class="footer">
-            <div class="container">
-                <p>
-                    Designed by <a href="https://www.linkedin.com/in/jenny-chen-1a953969">Jenny Chen</a>
-                    and <a href="http://gerry-wu.strikingly.com/"> Yu-Chia Wu</a>
-                </p>
-                <p>
-                    Last Updated: December 2015
-                </p>
-            </div>
-        </footer>
+
 
         <script>
         $(function() { // document ready
@@ -126,10 +131,10 @@
             };
             $(document).on('click', '#calendar_nav', nstart);
             $(document).on('click', '#list_nav', nstart);
-            $('nav.navbar-fixed-top').autoHidingNavbar({
-              showOnUpscroll: false,
-              showOnBottom: false
-            });
+            // $('nav.navbar-fixed-top').autoHidingNavbar({
+            //   showOnUpscroll: false,
+            //   showOnBottom: false
+            // });
 
             toastr.options = {
               "positionClass": "toast-bottom-left"
