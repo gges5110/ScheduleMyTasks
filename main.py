@@ -29,6 +29,7 @@ from datetime import datetime, date, time, timedelta
 
 from google.appengine.ext import ndb
 from google.appengine.api import users, memcache
+from oauth2client.appengine import CredentialsModel
 from google.net.proto.ProtocolBuffer import ProtocolBufferDecodeError
 from apiclient.discovery import build
 from oauth2client.appengine import OAuth2DecoratorFromClientSecrets
@@ -285,7 +286,7 @@ class Schedule(webapp2.RequestHandler):
         schedule_list = []
 
         current_user = user_service.userinfo().get().execute(http = decorator.http()).get('email')
-        settings = Setting.query(Setting.user_email == current_user).fetch()        
+        settings = Setting.query(Setting.user_email == current_user).fetch()
         if len(settings) > 0:
             setting = settings[0]
             small = setting.max_time_per_block
@@ -952,6 +953,14 @@ class DeleteTask(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/plain'
             self.response.write('Failed')
 
+class Logout(webapp2.RequestHandler):
+    def get(self):
+        credentials = CredentialsModel.query().fetch
+        for credential in credentials:
+            logging.info(credential.key.url_safe())
+        self.redirect('/')
+
+
 class Settings(webapp2.RequestHandler):
     @decorator.oauth_required
     def get(self):
@@ -1043,6 +1052,7 @@ app = webapp2.WSGIApplication([
     ('/manage_lists', ManageLists),
     ('/manage_tasks', ManageTasks),
     ('/settings', Settings),
+    ('/logout', Logout),
     ('/api/sync_google_calendar_to_list', SyncGoogleCalendarToList),
     ('/api/get_calendar_event', GetCalendarEvent),
     ('/api/put_list_on_calendar', PutListOnCalendar),
