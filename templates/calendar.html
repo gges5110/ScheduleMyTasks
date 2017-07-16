@@ -45,7 +45,7 @@ div.fc-center>h2 {
                 <h4>
                   <i class="glyphicon glyphicon-calendar" ></i>
                   <span>Calendar for
-                  <a href="https://calendar.google.com/calendar/">{{ email }}</a></span>                  
+                  <a href="https://calendar.google.com/calendar/">{{ email }}</a></span>
                 </h4>
             </div>
 
@@ -297,13 +297,14 @@ $(function() { // document ready
     var today = new Date();
     var date_now = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
 
+    // Initialize fullCalendar
     $('#calendar').fullCalendar({
         header: {
           left: 'prev,next today',
           center: 'title',
           right: 'month,agendaWeek,agendaDay'
         },
-        // height: 1650,
+        height: 1460,
         eventRender: function (event, element) {
             element.attr('href', 'javascript:void(0);');
             element.click(function() {
