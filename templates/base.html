@@ -3,48 +3,20 @@
 <html lang="en">
     <head>
         <title>ScheduleMyTasks</title>
-        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-        <script src="/frontend-libraries/jquery/jquery-1.11.3.min.js"></script>
+        <!-- jQuery (necessary to load up front) -->
+        <script type="text/javascript" src="/frontend-libraries/jquery/jquery-1.11.3.min.js"></script>
 
-        <!-- jQuery UI -->
+        <link rel="stylesheet" href="/frontend-libraries/bootstrap/bootstrap.min.css">
+        <link rel="stylesheet" href="/frontend-libraries/bootstrap-datetimepicker/bootstrap-datetimepicker.min.css" />
+        <link rel="stylesheet" href="/frontend-libraries/bootstrap3-dialog/bootstrap-dialog.min.css">
+        <link rel="stylesheet" href="/frontend-libraries/fullcalendar/fullcalendar.min.css" />
+        <link rel="stylesheet" href="/frontend-libraries/fullcalendar/fullcalendar.print.css" media='print'/>
         <link rel="stylesheet" href="/frontend-libraries/jquery-ui/jquery-ui.min.css" />
-        <script src="/frontend-libraries/jquery-ui/jquery-ui.min.js"></script>
-
-        <!-- jQuery UI -->
-        <!-- <link rel="stylesheet" href="jquery-scrollbar/jquery.scrollbar.css" />
-        <script src="./jquery-scrollbar/jquery.scrollbar.min.js"></script> -->
-
-        <!-- Bootstrap -->
-        <script src="/frontend-libraries/bootstrap/js/bootstrap.min.js"></script>
-        <link href="/frontend-libraries/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
-        <!-- bootstrap3-dialog -->
-        <link href="/frontend-libraries/bootstrap3-dialog/css/bootstrap-dialog.min.css" rel="stylesheet">
-        <script type="text/javascript" src="/frontend-libraries/bootstrap3-dialog/js/bootstrap-dialog.min.js"></script>
-
-        <script type="text/javascript" src="/frontend-libraries/moment/min/moment.min.js"></script>
-        <script type="text/javascript" src="/frontend-libraries/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
-        <link rel="stylesheet" href="/frontend-libraries/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" />
-
-        <!-- fullcalendar -->
-        <link rel="stylesheet" href="/frontend-libraries/fullcalendar/dist/fullcalendar.min.css" />
-        <link rel="stylesheet" href="/frontend-libraries/fullcalendar/dist/fullcalendar.print.css" media='print'/>
-
-        <!-- NProgress -->
-        <script src='/frontend-libraries/nprogress/nprogress.js'></script>
         <link rel='stylesheet' href='/frontend-libraries/nprogress/nprogress.css'/>
-
-        <!-- tablesorter -->
-        <script src='/frontend-libraries/tablesorter/jquery.tablesorter.min.js'></script>
-        <script src='/frontend-libraries/tablesorter/jquery.tablesorter.widgets.js'></script>
-        <link href="/frontend-libraries/tablesorter/theme.bootstrap.css" rel="stylesheet">
-
-        <!-- toastr -->
-        <link href="/frontend-libraries/toastr/toastr.css" rel="stylesheet"/>
-        <script type="text/javascript" src="/frontend-libraries/toastr/toastr.js"></script>
-
-        <link href="/frontend-libraries/bootstrap/css/theme.css" rel="stylesheet"/>
-
+        <link rel="stylesheet" href="/frontend-libraries/tablesorter/theme.bootstrap.css">
+        <link rel="stylesheet" href="/frontend-libraries/toastr/toastr.min.css"/>
+        <!-- custom paper theme -->
+        <link rel="stylesheet" href="/frontend-libraries/bootstrap/theme.css"/>
     </head>
 
     <body>
@@ -89,8 +61,6 @@
                 </div>
             </nav>
 
-
-
             <div class="container" style="padding-top: 70px; padding-bottom: 100px;" role="main">
 
             {% block header %}
@@ -104,14 +74,13 @@
                  <div class="container">
                      <p>
                          Designed by <a href="https://www.linkedin.com/in/jenny-chen-1a953969">Jenny Chen</a>
-                         and <a href="http://gerry-wu.strikingly.com/"> Yu-Chia Wu</a>
+                         and <a href="https://gges5110.github.io/"> Yu-Chia Wu</a>
                          <br>
-                         Last Updated: January 2016
+                         Last Updated: July 2017
                      </p>
                  </div>
              </footer>
         </div>
-
 
         <script>
         $(function() { // document ready
@@ -126,11 +95,20 @@
             toastr.options = {
               "positionClass": "toast-bottom-left"
             }
-
         });
         </script>
 
-        <script type="text/javascript" src="/frontend-libraries/fullcalendar/dist/fullcalendar.min.js"></script>
+        <script type="text/javascript" src="/frontend-libraries/bootstrap/bootstrap.min.js"></script>
+        <!-- bootstrap-datetimepicker requires Moment.js to be loaded first -->
+        <script type="text/javascript" src="/frontend-libraries/moment/moment-with-locales.min.js"></script>
+        <script type="text/javascript" src="/frontend-libraries/bootstrap-datetimepicker/bootstrap-datetimepicker.min.js"></script>
+        <script type="text/javascript" src="/frontend-libraries/bootstrap3-dialog/bootstrap-dialog.min.js"></script>
+        <script type="text/javascript" src="/frontend-libraries/fullcalendar/fullcalendar.min.js"></script>
+        <script type="text/javascript" src="/frontend-libraries/jquery-ui/jquery-ui.min.js"></script>
+        <script type="text/javascript" src='/frontend-libraries/nprogress/nprogress.js'></script>
+        <script type="text/javascript" src='/frontend-libraries/tablesorter/jquery.tablesorter.min.js'></script>
+        <script type="text/javascript" src='/frontend-libraries/tablesorter/jquery.tablesorter.widgets.js'></script>
+        <script type="text/javascript" src="/frontend-libraries/toastr/toastr.min.js"></script>
     </body>
 </html>
 

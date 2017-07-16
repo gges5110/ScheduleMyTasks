@@ -9,23 +9,12 @@ handlers:
   static_files: favicon.ico
   upload: favicon\.ico
 
-
 - url: /
   script: main.app
 - url: /oauth2callback
   script: main.app
 - url: /frontend-libraries
   static_dir: frontend-libraries
-- url: /bootstrap
-  static_dir: bootstrap
-- url: /bootstrap3-dialog
-  static_dir: bootstrap3-dialog
-- url: /jquery-ui
-  static_dir: jquery-ui
-- url: /jquery
-  static_dir: jquery
-- url: /toastr
-  static_dir: toastr
 
 - url: .*
   script: main.app
