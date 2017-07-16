@@ -16,7 +16,7 @@
 #
 
 # calendar string format: 2015-08-26T09:00:00-05:00
-import httplib2
+# import httplib2
 import webapp2
 import os
 import jinja2

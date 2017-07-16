@@ -4,49 +4,46 @@
     <head>
         <title>ScheduleMyTasks</title>
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-        <script src="/jquery/jquery-1.11.3.min.js"></script>
+        <script src="/frontend-libraries/jquery/jquery-1.11.3.min.js"></script>
 
         <!-- jQuery UI -->
-        <link rel="stylesheet" href="jquery-ui/jquery-ui.min.css" />
-        <script src="./jquery-ui/jquery-ui.min.js"></script>
+        <link rel="stylesheet" href="/frontend-libraries/jquery-ui/jquery-ui.min.css" />
+        <script src="/frontend-libraries/jquery-ui/jquery-ui.min.js"></script>
 
         <!-- jQuery UI -->
         <!-- <link rel="stylesheet" href="jquery-scrollbar/jquery.scrollbar.css" />
         <script src="./jquery-scrollbar/jquery.scrollbar.min.js"></script> -->
 
         <!-- Bootstrap -->
-        <script src="/bootstrap/js/bootstrap.min.js"></script>
-        <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <script src="/frontend-libraries/bootstrap/js/bootstrap.min.js"></script>
+        <link href="/frontend-libraries/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
         <!-- bootstrap3-dialog -->
-        <link href="/bootstrap3-dialog/css/bootstrap-dialog.min.css" rel="stylesheet">
-        <script type="text/javascript" src="./bootstrap3-dialog/js/bootstrap-dialog.min.js"></script>
+        <link href="/frontend-libraries/bootstrap3-dialog/css/bootstrap-dialog.min.css" rel="stylesheet">
+        <script type="text/javascript" src="/frontend-libraries/bootstrap3-dialog/js/bootstrap-dialog.min.js"></script>
 
-        <!-- bootstrap-autohidingnavbar -->
-        <script type="text/javascript" src="./bootstrap-autohidingnavbar/jquery.bootstrap-autohidingnavbar.min.js"></script>
-
-        <script type="text/javascript" src="/bower_components/moment/min/moment.min.js"></script>
-        <script type="text/javascript" src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
-        <link rel="stylesheet" href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" />
+        <script type="text/javascript" src="/frontend-libraries/moment/min/moment.min.js"></script>
+        <script type="text/javascript" src="/frontend-libraries/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+        <link rel="stylesheet" href="/frontend-libraries/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" />
 
         <!-- fullcalendar -->
-        <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.min.css" />
-        <link rel="stylesheet" href="/bower_components/fullcalendar/dist/fullcalendar.print.css" media='print'/>
+        <link rel="stylesheet" href="/frontend-libraries/fullcalendar/dist/fullcalendar.min.css" />
+        <link rel="stylesheet" href="/frontend-libraries/fullcalendar/dist/fullcalendar.print.css" media='print'/>
 
         <!-- NProgress -->
-        <script src='/bower_components/nprogress/nprogress.js'></script>
-        <link rel='stylesheet' href='/bower_components/nprogress/nprogress.css'/>
+        <script src='/frontend-libraries/nprogress/nprogress.js'></script>
+        <link rel='stylesheet' href='/frontend-libraries/nprogress/nprogress.css'/>
 
         <!-- tablesorter -->
-        <script src='/bower_components/tablesorter/jquery.tablesorter.min.js'></script>
-        <script src='/bower_components/tablesorter/jquery.tablesorter.widgets.js'></script>
-        <link href="/bower_components/tablesorter/theme.bootstrap.css" rel="stylesheet">
+        <script src='/frontend-libraries/tablesorter/jquery.tablesorter.min.js'></script>
+        <script src='/frontend-libraries/tablesorter/jquery.tablesorter.widgets.js'></script>
+        <link href="/frontend-libraries/tablesorter/theme.bootstrap.css" rel="stylesheet">
 
         <!-- toastr -->
-        <link href="./toastr/toastr.css" rel="stylesheet"/>
-        <script type="text/javascript" src="./toastr/toastr.js"></script>
+        <link href="/frontend-libraries/toastr/toastr.css" rel="stylesheet"/>
+        <script type="text/javascript" src="/frontend-libraries/toastr/toastr.js"></script>
 
-        <link href="/bootstrap/css/theme.css" rel="stylesheet"/>
+        <link href="/frontend-libraries/bootstrap/css/theme.css" rel="stylesheet"/>
 
     </head>
 
@@ -55,53 +52,40 @@
             <!-- Fixed navbar -->
             <nav class="navbar navbar-default navbar-fixed-top">
                 <div class="container">
-                    <!-- <div class="navbar-header">
-                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                            <span class="sr-only">Toggle navigation</span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
+                    <ul class="nav nav-tabs">
+                        <li class="nav_li">
+                          <a class="navbar-brand" href="/">
+                              <i class="glyphicon glyphicon-home"></i>
+                              <span>ScheduleMyTasks</span>
+                          </a>
+                        </li>
 
+                        <li id="li_calendar" class="nav_li">
+                            <a class="navbar-brand" href="/calendar" id="calendar_nav">
+                                <i class="glyphicon glyphicon-calendar" ></i>
+                                <span>Calendar</span>
+                            </a>
+                        </li>
+                        <li id="li_lists" class="nav_li">
+                            <a class="navbar-brand" href="/manage_lists" id="list_nav">
+                                <i class="glyphicon glyphicon-list-alt" ></i>
+                                <span>Lists</span>
+                            </a>
+                        </li>
+                        <li id="li_settings" class="nav_li">
+                            <a class="navbar-brand" href="/settings" id="list_nav">
+                                <i class="glyphicon glyphicon-cog" ></i>
+                                <span>Settings</span>
+                            </a>
+                        </li>
+                        <li id="li_logout" class="nav_li">
+                            <a class="navbar-brand" href="/logout" id="logout_nav">
+                                <i class="glyphicon glyphicon-cog" ></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
 
-                    </div> -->
-
-                    <!-- <div id="navbar" class="navbar-collapse collapse"> -->
-                        <ul class="nav nav-tabs">
-                            <li class="nav_li">
-                              <a class="navbar-brand" href="/">
-                                  <i class="glyphicon glyphicon-home"></i>
-                                  <span>ScheduleMyTasks</span>
-                              </a>
-                            </li>
-
-                            <li id="li_calendar" class="nav_li">
-                                <a class="navbar-brand" href="/calendar" id="calendar_nav">
-                                    <i class="glyphicon glyphicon-calendar" ></i>
-                                    <span>Calendar</span>
-                                </a>
-                            </li>
-                            <li id="li_lists" class="nav_li">
-                                <a class="navbar-brand" href="/manage_lists" id="list_nav">
-                                    <i class="glyphicon glyphicon-list-alt" ></i>
-                                    <span>Lists</span>
-                                </a>
-                            </li>
-                            <li id="li_settings" class="nav_li">
-                                <a class="navbar-brand" href="/settings" id="list_nav">
-                                    <i class="glyphicon glyphicon-cog" ></i>
-                                    <span>Settings</span>
-                                </a>
-                            </li>
-                            <li id="li_logout" class="nav_li">
-                                <a class="navbar-brand" href="/logout" id="logout_nav">
-                                    <i class="glyphicon glyphicon-cog" ></i>
-                                    <span>Logout</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    <!-- </div> -->
+                    </ul>
                 </div>
             </nav>
 
@@ -138,10 +122,6 @@
             };
             $(document).on('click', '#calendar_nav', nstart);
             $(document).on('click', '#list_nav', nstart);
-            // $('nav.navbar-fixed-top').autoHidingNavbar({
-            //   showOnUpscroll: false,
-            //   showOnBottom: false
-            // });
 
             toastr.options = {
               "positionClass": "toast-bottom-left"
@@ -150,7 +130,7 @@
         });
         </script>
 
-        <script type="text/javascript" src="/bower_components/fullcalendar/dist/fullcalendar.min.js"></script>
+        <script type="text/javascript" src="/frontend-libraries/fullcalendar/dist/fullcalendar.min.js"></script>
     </body>
 </html>
 

@@ -14,14 +14,12 @@ handlers:
   script: main.app
 - url: /oauth2callback
   script: main.app
-- url: /bower_components
-  static_dir: bower_components
+- url: /frontend-libraries
+  static_dir: frontend-libraries
 - url: /bootstrap
   static_dir: bootstrap
 - url: /bootstrap3-dialog
   static_dir: bootstrap3-dialog
-- url: /bootstrap-autohidingnavbar
-  static_dir: bootstrap-autohidingnavbar
 - url: /jquery-ui
   static_dir: jquery-ui
 - url: /jquery
